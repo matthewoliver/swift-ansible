@@ -1,0 +1,29 @@
+---
+- name: "swift object server configuration"
+  template: src=object-server.conf.j2 dest=/etc/swift/object-server.conf owner={{ user }} mode=0644
+  notify: 
+    - (re)start object server
+    - (re)start object auditor
+    - (re)start object replicator
+    - (re)start object updater
+    - (re)start object reconstructor
+
+- name: "Set object server to start at boot"
+  cron: special_time=reboot job="swift-init object-server start" name="start object server"
+
+- name: "Set object auditor to start at boot"
+  cron: special_time=reboot job="swift-init object-auditor start" name="start object auditor"
+
+- name: "Set object replicator to start at boot"
+  cron: special_time=reboot job="swift-init object-replicator start" name="start object replicator"
+
+- name: "Set object updater to start at boot"
+  cron: special_time=reboot job="swift-init object-updater start" name="start object updator"
+
+- name: "Set object reconstructor to start at boot"
+  cron: special_time=reboot job="swift-init object-reconstructor start" name="start object reconstructor"
+
+- name: "set up rsyslog for object"
+  copy: src=10_swift_object.conf dest=/etc/rsyslog.d/10_swift_object.conf owner=root mode=0644 
+  notify:
+    - restart rsyslog server

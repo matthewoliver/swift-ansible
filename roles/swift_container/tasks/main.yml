@@ -1,0 +1,33 @@
+---
+- name: "swift container server configuration"
+  template: src=container-server.conf.j2 dest=/etc/swift/container-server.conf owner={{ user }} mode=0644
+  notify: 
+    - (re)start container server
+    - (re)start container auditor
+    - (re)start container replicator
+    - (re)start container updater
+
+- name: "swift container reconciler configuration"
+  copy: src=container-reconciler.conf dest=/etc/swift/container-reconciler.conf owner={{ user }} mode=0644
+  notify:
+    - (re)start container reconciler 
+
+- name: "Set container server to start at boot"
+  cron: special_time=reboot job="swift-init container-server start" name="start swift container server"
+
+- name: "Set container auditor to start at boot"
+  cron: special_time=reboot job="swift-init container-auditor start" name="start swift container auditor"
+
+- name: "Set container replicator to start at boot"
+  cron: special_time=reboot job="swift-init container-replicator start" name="start swift conatiner replicator"
+
+- name: "Set container updater to start at boot"
+  cron: special_time=reboot job="swift-init container-updater start" name="start swift container updater"
+
+- name: "Set container reconciler to start at boot"
+  cron: special_time=reboot job="swift-init container-reconciler start" name="start swift container reconciler"
+
+- name: "set up rsyslog for container"
+  copy: src=10_swift_container.conf dest=/etc/rsyslog.d/10_swift_container.conf owner=root mode=0644 
+  notify:
+    - restart rsyslog server

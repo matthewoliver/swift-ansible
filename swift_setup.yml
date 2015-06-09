@@ -1,0 +1,186 @@
+---
+# This swift setup file, is used as a simple way of managing your swift
+# ring configuration. The swift_inventory binary  will generate the ansible
+# iventory file for you based of this file. Giving you one place to manage your
+# cluster.
+#
+# NOTE: The swift ansible configuration has other variables that can be tweeked,
+#       see group_vars/ and roles/*/vars/ for other areas to tweek.
+local:
+  ansible_connection=local
+
+# Swift settings are global through out the cluster.
+swift:
+  part_power: 8
+  output_directory: /tmp/swift
+  output_filename: hosts
+  user: swift
+  hash_path_suffix: changeme
+  hash_path_prefix: changeme
+  syslog_host: 10.1.1.1:514
+
+# Global hosts
+# Hosts can be defined in the sections below or here, the advantage of
+# defining them here is that they can be reused in multiple sections below.
+#
+# When need to reference a global host use the form:
+#   - name: <host>/<drive>
+hosts:
+  - host: 192.168.10.11
+    mountpoint: /mnt/
+    region: 1
+    zone: 1
+    drives:
+      - name: sda
+        wieght: 100
+      - name: sdb
+        region: 1
+        zone: 1
+        weight: 100
+      - name: sdc
+        wieght: 100
+      - name: sdd
+        wieght: 100
+  - host: 192.168.10.12
+    drive: sda
+    mountpoint: /mnt/
+    region: 1
+    zone: 2
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+  - host: 192.168.10.21
+    drive: sda
+    mountpoint: /mnt/
+    region: 2
+    zone: 1
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+  - host: 192.168.10.22
+    drive: sda
+    mountpoint: /mnt/
+    region: 2
+    zone: 2
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+
+proxy:
+  memcache_servers:
+    - 127.0.0.1:11211
+  authtoken: 
+    active: false
+    delay_auth_decision: true
+    auth_version: v2.0
+    auth_host: keystone.local.lan
+    auth_port: 35357
+    auth_protocol: https
+    auth_uri: http://keystonehost:5000/
+    admin_tenant_name: service
+    admin_user: swift
+    admin_password: ADMIN
+  hosts:
+    - host: 1.2.3.4
+    - host: 1.2.3.5
+
+account:
+  repl_number: 3
+  min_part_hours: 1
+  port: 6002
+  hosts:
+    - name: 192.168.10.11/sda
+    - name: 192.168.10.11/sdb
+    - name: 192.168.10.11/sdc
+    - name: 192.168.10.11/sdd
+    - name: 192.168.10.12/sda
+    - name: 192.168.10.12/sdb
+    - name: 192.168.10.12/sdc
+    - name: 192.168.10.12/sdd
+    - name: 192.168.10.21/sda
+    - name: 192.168.10.21/sdb
+    - name: 192.168.10.21/sdc
+    - name: 192.168.10.21/sdd
+    - name: 192.168.10.22/sda
+    - name: 192.168.10.22/sdb
+    - name: 192.168.10.22/sdc
+    - name: 192.168.10.22/sdd
+
+container:
+  repl_number: 3
+  port: 6001
+  hosts:
+    - name: 192.168.10.11/sda
+    - name: 192.168.10.11/sdb
+    - name: 192.168.10.11/sdc
+    - name: 192.168.10.11/sdd
+    - name: 192.168.10.12/sda
+    - name: 192.168.10.12/sdb
+    - name: 192.168.10.12/sdc
+    - name: 192.168.10.12/sdd
+    - name: 192.168.10.21/sda
+    - name: 192.168.10.21/sdb
+    - name: 192.168.10.21/sdc
+    - name: 192.168.10.21/sdd
+    - name: 192.168.10.22/sda
+    - name: 192.168.10.22/sdb
+    - name: 192.168.10.22/sdc
+    - name: 192.168.10.22/sdd
+
+storage_policies:
+  default: gold
+  port: 6000
+  policies:
+    - name: gold
+      index: 0
+      type: replication
+      repl_number: 3
+      min_part_hours: 1
+      hosts:
+        - name: 192.168.10.11/sda
+        - name: 192.168.10.11/sdb
+        - name: 192.168.10.11/sdc
+        - name: 192.168.10.11/sdd
+        - name: 192.168.10.12/sda
+        - name: 192.168.10.12/sdb
+        - name: 192.168.10.12/sdc
+        - name: 192.168.10.12/sdd
+        - name: 192.168.10.21/sda
+        - name: 192.168.10.21/sdb
+        - name: 192.168.10.21/sdc
+        - name: 192.168.10.21/sdd
+        - name: 192.168.10.22/sda
+        - name: 192.168.10.22/sdb
+        - name: 192.168.10.22/sdc
+        - name: 192.168.10.22/sdd
+    - name: silver
+      index: 1
+      type: replication
+      repl_number: 2
+      hosts:
+        - name: 192.168.10.11/sda
+        - name: 192.168.10.11/sdb
+        - name: 192.168.10.11/sdc
+        - name: 192.168.10.11/sdd
+        - name: 192.168.10.12/sda
+        - name: 192.168.10.12/sdb
+        - name: 192.168.10.12/sdc
+        - name: 192.168.10.12/sdd

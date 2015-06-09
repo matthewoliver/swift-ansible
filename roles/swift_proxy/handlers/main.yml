@@ -1,0 +1,9 @@
+---
+- name: (re)start proxy server
+  shell: swift-init proxy-server start || swift-init proxy-server restart 
+
+- name: restart rsyslog server
+  service: name=rsyslog state=restarted 
+
+- name: restart memcached
+  service: name=memcached state=restarted

@@ -1,0 +1,42 @@
+---
+- name: "Setup hosts file"
+  lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_default_ipv4.address }} {{item}}" state=present
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: groups['all']
+
+# If target is a debian/ubuntu system
+- include: debian.yml
+  when: ansible_os_family == 'Debian'
+
+# If target is a centos/redhat system
+- include: redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: "Create swift group"
+  group: name={{ user }} state=present system=yes
+
+- name: "Create a swift user"
+  user: name={{ user }} state=present shell=/bin/false home=/opt/swift system=yes
+
+- name: "Checkout git repo"
+  git: repo={{ swift_repo }} version={{ swift_repo_tag }} dest=/opt/swift/swift update=yes
+  notify:
+    - Install swift dependencies
+    - Install swift
+
+- name: "Swift directory"
+  file: path=/etc/swift owner={{ user }} group={{ user }} state=directory 
+
+- name: "Swift lock directory"
+  file: path=/var/lock/swift owner={{ user }} group={{ user }} state=directory 
+
+- name: "Swift log directory - Debain"
+  file: path=/var/log/swift owner=syslog group=adm state=directory
+  when: ansible_os_family == 'Debian'
+
+- name: "Swift log directory - Redhat"
+  file: path=/var/log/swift owner=root group=adm state=directory
+  when: ansible_os_family == 'RedHat'
+
+- name: "Setup swift.conf"
+  template: src=swift.conf.j2 dest=/etc/swift/swift.conf owner={{ user }} mode=0644

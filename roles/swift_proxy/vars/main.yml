@@ -1,0 +1,7 @@
+---
+swift_proxy_packages:
+  debian:
+    - memcached
+
+  redhat:
+    - memcached

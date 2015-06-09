@@ -1,0 +1,29 @@
+---
+# If target is a debian/ubuntu system
+- include: debian.yml
+  when: ansible_os_family == 'Debian'
+
+# If target is a centos/redhat system
+- include: redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: "install the keystone auth_token middleware"
+  pip: name=keystonemiddleware
+
+- name: "swift proxy server configuration"
+  template: src=proxy-server.conf.j2 dest=/etc/swift/proxy-server.conf owner={{ user }} mode=0644
+  notify: 
+    - (re)start proxy server
+
+- name: "Set proxy server to start at boot"
+  cron: special_time=reboot job="swift-init proxy-server start" name="start wift proxy"
+
+- name: "set up rsyslog for proxy"
+  copy: src=10_swift_proxy.conf dest=/etc/rsyslog.d/10_swift_proxy.conf owner=root mode=0644 
+  notify:
+    - restart rsyslog server
+
+- name: "Set up memchached.conf"
+  template: src=memcached.conf.j2 dest=/etc/swift/memcached.conf owner={{ user }} mode=0644
+  notify:
+    - restart memcached

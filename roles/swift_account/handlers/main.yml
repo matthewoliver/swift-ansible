@@ -1,0 +1,15 @@
+---
+- name: (re)start account server
+  shell: swift-init account-server start || swift-init account-server restart
+
+- name: (re)start account auditor
+  shell: swift-init account-auditor start || swift-init account-auditor restart
+
+- name: (re)start account replicator
+  shell: swift-init account-replicator start || swift-init account-replicator restart
+
+- name: (re)start account reaper
+  shell: swift-init account-reaper start || swift-init account-reaper restart
+
+- name: restart rsyslog server
+  service: name=rsyslog state=restarted 

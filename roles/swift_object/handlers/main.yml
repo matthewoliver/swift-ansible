@@ -1,0 +1,18 @@
+---
+- name: (re)start object server
+  shell: swift-init object-server start || swift-init object-server restart
+
+- name: (re)start object auditor
+  shell: swift-init object-auditor start || swift-init object-auditor restart
+
+- name: (re)start object replicator
+  shell: swift-init object-replicator start || swift-init object-replicator restart
+
+- name: (re)start object updater
+  shell: swift-init object-updater start || swift-init object-updater restart
+
+- name: (re)start object reconstructor
+  shell: swift-init object-reconstructor start || swift-init object-reconstructor restart
+
+- name: restart rsyslog server
+  service: name=rsyslog state=restarted 

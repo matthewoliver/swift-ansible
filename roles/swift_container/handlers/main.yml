@@ -1,0 +1,18 @@
+---
+- name: (re)start container server
+  shell: swift-init container-server start || swift-init container-server restart
+
+- name: (re)start container auditor
+  shell: swift-init container-auditor start || swift-init container-auditor restart
+
+- name: (re)start container replicator
+  shell: swift-init container-replicator start || swift-init container-replicator restart
+
+- name: (re)start container updater
+  shell: swift-init container-updater start || swift-init container-updater restart
+
+- name: (re)start container reconciler
+  shell: swift-init container-reconciler start || swift-init container-reconciler restart
+
+- name: restart rsyslog server
+  service: name=rsyslog state=restarted 

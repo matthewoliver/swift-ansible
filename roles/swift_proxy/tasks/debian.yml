@@ -1,0 +1,4 @@
+---
+- name: "Install Debian/Ubuntu swift swift packages"
+  apt: pkg={{ item }} state=installed update_cache=yes
+  with_items: "{{ swift_proxy_packages.debian }}"

@@ -1,0 +1,4 @@
+---
+- name: "install Redhat/CentOS swift proxy packages"
+  yum: pkg={{ item }} state=installed 
+  with_items: "{{ swift_proxy_packages.redhat }}"
