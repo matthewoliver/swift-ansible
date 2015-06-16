@@ -1,4 +1,4 @@
----
+
 - name: "Setup hosts file"
   lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_default_ipv4.address }} {{item}}" state=present
   when: hostvars[item].ansible_default_ipv4.address is defined
@@ -23,6 +23,8 @@
   notify:
     - Install swift dependencies
     - Install swift
+  tags:
+    - deploy_code
 
 - name: "Swift directory"
   file: path=/etc/swift owner={{ user }} group={{ user }} state=directory 
@@ -40,3 +42,6 @@
 
 - name: "Setup swift.conf"
   template: src=swift.conf.j2 dest=/etc/swift/swift.conf owner={{ user }} mode=0644
+
+- name: "Set up memchached.conf"
+  template: src=memcache.conf.j2 dest=/etc/swift/memcache.conf owner={{ user }} mode=0644

@@ -23,3 +23,8 @@
   copy: src=10_swift_account.conf dest=/etc/rsyslog.d/10_swift_account.conf owner=root mode=0644 
   notify:
     - restart rsyslog server
+
+- name: "Setup rsync"
+  template: src=rsyncd.conf.j2 dest=/etc/rsyncd.conf owner=root mode=0644
+  notify: 
+    - restart rsync server

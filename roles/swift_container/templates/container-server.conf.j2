@@ -153,6 +153,10 @@ log_facility = LOG_LOCAL2
 # containers_per_second = 200
 # recon_cache_path = /var/cache/swift
 
+[container-sharder]
+shard_group_count = 500
+#interval = 1800
+
 [container-sync]
 # You can override the default log routing for this app here (don't use set!):
 # log_name = container-sync

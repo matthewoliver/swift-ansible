@@ -16,3 +16,6 @@
 
 - name: restart rsyslog server
   service: name=rsyslog state=restarted 
+
+- name: restart rsync server
+  service: name=rsync state=restarted 

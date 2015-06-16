@@ -14,5 +14,11 @@
 - name: (re)start container reconciler
   shell: swift-init container-reconciler start || swift-init container-reconciler restart
 
+- name: (re)start container sharder
+  shell: swift-init container-sharder start || swift-init container-sharder restart
+
 - name: restart rsyslog server
   service: name=rsyslog state=restarted 
+
+- name: restart rsync server
+  service: name=rsync state=restarted 

@@ -18,6 +18,8 @@ swift:
   hash_path_suffix: changeme
   hash_path_prefix: changeme
   syslog_host: 10.1.1.1:514
+  memcache_servers:
+    - 127.0.0.1:11211
 
 # Global hosts
 # Hosts can be defined in the sections below or here, the advantage of
@@ -85,8 +87,6 @@ hosts:
         weight: 100
 
 proxy:
-  memcache_servers:
-    - 127.0.0.1:11211
   authtoken: 
     active: false
     delay_auth_decision: true

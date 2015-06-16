@@ -275,6 +275,7 @@ user_admin_admin = master124 .admin .reseller_admin
 user_test_tester = master125 .admin
 user_test2_tester2 = mast3r134 .admin
 user_test_tester3 = master0001
+user_matt_matt = Mast3r128 .admin .reseller_admin
 {% endif %}
 
 # To enable Keystone authentication you need to have the auth token
@@ -386,7 +387,7 @@ use = egg:swift#memcache
 # memcache.conf (see memcache.conf-sample) or lacking that file, it will
 # default to the value below. You can specify multiple servers separated with
 # commas, as in: 10.1.2.3:11211,10.1.2.4:11211
-# memcache_servers = {{ memcache_servers }}
+# memcache_servers = 127.0.0.1:11211
 #
 # Sets how memcache values are serialized and deserialized:
 # 0 = older, insecure pickle serialization
@@ -398,7 +399,7 @@ use = egg:swift#memcache
 # upgrade with 0, then set to 1 and reload, then after some time (24 hours)
 # set to 2 and reload.
 # In the future, the ability to use pickle serialization will be removed.
-memcache_serialization_support = 2
+# memcache_serialization_support = 2
 #
 # Sets the maximum number of connections to each memcached server per worker
 # memcache_max_connections = 2

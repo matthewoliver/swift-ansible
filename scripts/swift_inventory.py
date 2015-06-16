@@ -154,6 +154,9 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     if not _section_defined("swift"):
         return RETURN_NOT_DEFINED
 
+    _mc_servers = _swift["swift"].get('memcache_servers')
+    memcache_servers = ",".join(_mc_servers) if _mc_servers else \
+                       '127.0.0.1:11211'
     swift_options = [
         "part_power=%s" % (_swift['swift'].get('part_power',
                                                DEFAULT_PART_POWER)),
@@ -162,6 +165,7 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
         "hash_path_prefix=%s" % (_swift['swift'].get("hash_path_prefix")),
         "syslog_host=%s" % (_swift['swift'].get('syslog_host',
                                                 'localhost:514')),
+        "memcache_servers=%s" % (memcache_servers),
     ]
     output_path = _swift['swift'].get("output_directory", DEFAULT_OUTPUT_DIR)
     output_file = _swift['swift'].get("output_filename",
@@ -194,10 +198,6 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     for proxy in _swift["proxy"]["hosts"]:
         _write_to_file(output_fd, "%s" % (proxy["host"]))
     _write_to_file(output_fd, "\n[proxy:vars]")
-    _mc_servers = _swift["proxy"].get('memcache_servers')
-    memcache_servers = ",".join(_mc_servers) if _mc_servers else \
-                       '127.0.0.1:11211'
-    _write_to_file(output_fd, "memcache_servers=%s" % (memcache_servers))
     _at = _swift["proxy"].get('authtoken')
     if _at:
         authtoken = DEFAULT_AUTHTOKEN_SETTINGS

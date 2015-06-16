@@ -22,8 +22,3 @@
   copy: src=10_swift_proxy.conf dest=/etc/rsyslog.d/10_swift_proxy.conf owner=root mode=0644 
   notify:
     - restart rsyslog server
-
-- name: "Set up memchached.conf"
-  template: src=memcached.conf.j2 dest=/etc/swift/memcached.conf owner={{ user }} mode=0644
-  notify:
-    - restart memcached
