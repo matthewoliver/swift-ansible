@@ -14,6 +14,9 @@
 - name: (re)start object reconstructor
   shell: swift-init object-reconstructor start || swift-init object-reconstructor restart
 
+- name: (re)start object expirer
+  shell: swift-init object-expirer start || swift-init object-expirer restart
+
 - name: restart rsyslog server
   service: name=rsyslog state=restarted 
 

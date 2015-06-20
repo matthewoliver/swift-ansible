@@ -77,7 +77,7 @@ user = {{ user }}
 # eventlet_debug = false
 
 [pipeline:main]
-{% if authtoken_active == true %}
+{% if authtoken_active == 'true' %}
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit authtoken keystoneauth container-quotas account-quotas slo dlo proxy-logging proxy-server
 {% else %}
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth container-quotas account-quotas slo dlo proxy-logging proxy-server
@@ -270,7 +270,7 @@ use = egg:swift#tempauth
 # $HOST/v1/<reseller_prefix>_<account> where $HOST will do its best to resolve
 # to what the requester would need to use to reach this host.
 # Here are example entries, required for running the tests:
-{% if authtoken_active != true %}
+{% if authtoken_active != 'true' %}
 user_admin_admin = master124 .admin .reseller_admin
 user_test_tester = master125 .admin
 user_test2_tester2 = mast3r134 .admin
@@ -287,7 +287,7 @@ user_matt_matt = Mast3r128 .admin .reseller_admin
 # and have it in your main pipeline so instead of having tempauth in
 # there you can change it to: authtoken keystoneauth
 #
-{% if authtoken_active == true %}
+{% if authtoken_active == 'true' %}
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 auth_host = {{ auth_host }}
@@ -326,7 +326,7 @@ use = egg:swift#keystoneauth
 # underscore after the two single quote characters).
 # operator_roles = admin, swiftoperator
 #
-operator_roles = admin, swiftoperator
+operator_roles = admin, SwiftOperator
 # The reseller admin role has the ability to create and delete accounts
 reseller_admin_role = reseller_admin
 {% endif %}

@@ -26,6 +26,14 @@
   tags:
     - deploy_code
 
+- name: "Run post git checkout hook"
+  shell: "{{ git_post_checkout }}"
+  args:
+    chdir: /opt/swift/swift 
+  when: git_post_checkout is defined 
+  tags:
+    - deploy_code
+
 - name: "Swift directory"
   file: path=/etc/swift owner={{ user }} group={{ user }} state=directory 
 

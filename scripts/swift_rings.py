@@ -80,12 +80,13 @@ def build_ring(section, conf, part_power, hosts):
     section_key = section.split('-')[0]
     service_port = conf.get('port', DEFAULT_SECTION_PORT[section_key])
     for host in conf['hosts']:
+        port = host.get('port', service_port)
         if 'name' in host:
             if host['name'] not in hosts:
                 print("Host %(name) reference not found." % host)
                 sys.exit(3)
             host = hosts[host['name']]
-            host['port'] = service_port
+            host['port'] = port
             add_host_to_ring(build_file, host)
         else:
             for drive in host['drives']:
@@ -95,7 +96,7 @@ def build_ring(section, conf, part_power, hosts):
                 del tmp_dict['name']
                 if not tmp_dict.get('drive'):
                     tmp_dict['drive'] = DEFAULT_HOST_DRIVE
-                tmp_dict['port'] = service_port
+                tmp_dict['port'] = port
                 add_host_to_ring(build_file, tmp_dict)
 
     # Rebalance ring

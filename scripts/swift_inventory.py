@@ -26,7 +26,7 @@ RETURN_NOT_DEFINED = 3
 # FILE formatted strings
 HEADER = """# This file was generated using the %s version %s at %s
 [local]
-localhost ansible_connection=local
+localhost ansible_connection=local swift_setup_yaml=%s
 
 [proxy]"""
 
@@ -166,7 +166,17 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
         "syslog_host=%s" % (_swift['swift'].get('syslog_host',
                                                 'localhost:514')),
         "memcache_servers=%s" % (memcache_servers),
+        "rings_dir=%s" % (_swift['swift'].get('rings_dir', 'rings')),
     ]
+    if _swift['swift'].get('git_tag'):
+        swift_options.append('swift_repo_tag=%s' % \
+                             _swift['swift'].get('git_tag'))
+    if _swift['swift'].get('git_repo'):
+        swift_options.append('swift_repo=%s' % \
+                             _swift['swift'].get('git_repo'))
+    if _swift['swift'].get('git_post_checkout'):
+        swift_options.append('git_post_checkout=%s' % \
+                             _swift['swift'].get('git_post_checkout'))
     output_path = _swift['swift'].get("output_directory", DEFAULT_OUTPUT_DIR)
     output_file = _swift['swift'].get("output_filename",
                                       DEFAULT_OUTPUT_FILENAME)
@@ -178,7 +188,8 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     output_fd = _get_output_fd(output_file)
 
     n = datetime.datetime.now()
-    _write_to_file(output_fd, HEADER % (__file__, VERSION, n.ctime()))
+    _write_to_file(output_fd, HEADER % (__file__, VERSION, n.ctime(),
+                                        setup))
 
     # Global hosts
     if _section_defined("hosts"):

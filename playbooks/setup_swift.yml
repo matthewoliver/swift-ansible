@@ -1,0 +1,33 @@
+---
+- hosts: swift
+  user: root
+  roles:
+    - swift_common
+
+- hosts: proxy
+  user: root
+  roles:
+    - swift_proxy
+  tags:
+    - proxy
+
+- hosts: account
+  user: root
+  roles:
+    - swift_account  
+  tags:
+    - account
+
+- hosts: container
+  user: root
+  roles:
+    - swift_container 
+  tags:
+    - container 
+
+- hosts: object
+  user: root
+  roles:
+    - swift_object  
+  tags:
+    - object

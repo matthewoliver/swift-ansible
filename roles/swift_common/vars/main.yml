@@ -1,10 +1,4 @@
 ---
-user: swift
-#swift_repo: https://github.com/openstack/swift.git
-swift_repo: https://github.com/matthewoliver/swift.git
-#swift_repo_tag: master
-swift_repo_tag: sharding_trie
-
 swift_common_packages:
   debian:
     - curl

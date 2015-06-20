@@ -1,0 +1,214 @@
+---
+# This swift setup file, is used as a simple way of managing your swift
+# ring configuration. The swift_inventory binary  will generate the ansible
+# iventory file for you based of this file. Giving you one place to manage your
+# cluster.
+#
+# NOTE: The swift ansible configuration has other variables that can be tweeked,
+#       see group_vars/ and roles/*/vars/ for other areas to tweek.
+local:
+  ansible_connection=local
+
+# Swift settings are global through out the cluster.
+swift:
+  part_power: 8
+  output_directory: /tmp/swift
+  output_filename: hosts02
+  rings_dir: rings02
+  user: swift
+  hash_path_suffix: changeme
+  hash_path_prefix: changeme
+  syslog_host: 10.1.1.1:514
+  #git_tag: server_per_port
+  git_post_checkout: git fetch https://review.openstack.org/openstack/swift refs/changes/89/184189/18 && git checkout FETCH_HEAD
+  memcache_servers:
+    - 192.168.10.3:11211
+    - 192.168.10.4:11211
+
+# Global hosts
+# Hosts can be defined in the sections below or here, the advantage of
+# defining them here is that they can be reused in multiple sections below.
+#
+# When need to reference a global host use the form:
+#   - name: <host>/<drive>
+hosts:
+  - host: 192.168.10.13
+    mountpoint: /mnt/
+    region: 1
+    zone: 1
+    drives:
+      - name: sda
+        wieght: 100
+      - name: sdb
+        region: 1
+        zone: 1
+        weight: 100
+      - name: sdc
+        wieght: 100
+      - name: sdd
+        wieght: 100
+  - host: 192.168.10.14
+    drive: sda
+    mountpoint: /mnt/
+    region: 1
+    zone: 2
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+  - host: 192.168.10.23
+    drive: sda
+    mountpoint: /mnt/
+    region: 2
+    zone: 1
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+  - host: 192.168.10.24
+    drive: sda
+    mountpoint: /mnt/
+    region: 2
+    zone: 2
+    drives:
+      - name: sda
+        weight: 100
+      - name: sdb
+        weight: 100
+      - name: sdc
+        weight: 100
+      - name: sdd
+        weight: 100
+
+proxy:
+  authtoken: 
+    active: false
+    delay_auth_decision: true
+    auth_version: v2.0
+    auth_host: keystone.local.lan
+    auth_port: 35357
+    auth_protocol: https
+    auth_uri: http://keystonehost:5000/
+    admin_tenant_name: service
+    admin_user: swift
+    admin_password: ADMIN
+  hosts:
+    - host: 119.9.40.108
+    - host: 119.9.43.33
+
+account:
+  repl_number: 3
+  min_part_hours: 1
+  port: 6010
+  hosts:
+    - name: 192.168.10.13/sda
+    - name: 192.168.10.13/sdb
+    - name: 192.168.10.13/sdc
+    - name: 192.168.10.13/sdd
+    - name: 192.168.10.14/sda
+    - name: 192.168.10.14/sdb
+    - name: 192.168.10.14/sdc
+    - name: 192.168.10.14/sdd
+    - name: 192.168.10.23/sda
+    - name: 192.168.10.23/sdb
+    - name: 192.168.10.23/sdc
+    - name: 192.168.10.23/sdd
+    - name: 192.168.10.24/sda
+    - name: 192.168.10.24/sdb
+    - name: 192.168.10.24/sdc
+    - name: 192.168.10.24/sdd
+
+container:
+  repl_number: 3
+  port: 6011
+  hosts:
+    - name: 192.168.10.13/sda
+    - name: 192.168.10.13/sdb
+    - name: 192.168.10.13/sdc
+    - name: 192.168.10.13/sdd
+    - name: 192.168.10.14/sda
+    - name: 192.168.10.14/sdb
+    - name: 192.168.10.14/sdc
+    - name: 192.168.10.14/sdd
+    - name: 192.168.10.23/sda
+    - name: 192.168.10.23/sdb
+    - name: 192.168.10.23/sdc
+    - name: 192.168.10.23/sdd
+    - name: 192.168.10.24/sda
+    - name: 192.168.10.24/sdb
+    - name: 192.168.10.24/sdc
+    - name: 192.168.10.24/sdd
+
+storage_policies:
+  default: gold
+  port: 6000
+  policies:
+    - name: gold
+      index: 0
+      type: replication
+      repl_number: 3
+      min_part_hours: 1
+      hosts:
+        - name: 192.168.10.13/sda
+          port: 6001
+        - name: 192.168.10.13/sdb
+          port: 6002
+        - name: 192.168.10.13/sdc
+          port: 6003
+        - name: 192.168.10.13/sdd
+          port: 6004
+        - name: 192.168.10.14/sda
+          port: 6001
+        - name: 192.168.10.14/sdb
+          port: 6002
+        - name: 192.168.10.14/sdc
+          port: 6003
+        - name: 192.168.10.14/sdd
+          port: 6004
+        - name: 192.168.10.23/sda
+          port: 6001
+        - name: 192.168.10.23/sdb
+          port: 6002
+        - name: 192.168.10.23/sdc
+          port: 6003
+        - name: 192.168.10.23/sdd
+          port: 6004
+        - name: 192.168.10.24/sda
+          port: 6001
+        - name: 192.168.10.24/sdb
+          port: 6002
+        - name: 192.168.10.24/sdc
+          port: 6003
+        - name: 192.168.10.24/sdd
+          port: 6004
+    - name: silver
+      index: 1
+      type: replication
+      repl_number: 2
+      hosts:
+        - name: 192.168.10.13/sda
+          port: 6001
+        - name: 192.168.10.13/sdb
+          port: 6002
+        - name: 192.168.10.13/sdc
+          port: 6003
+        - name: 192.168.10.13/sdd
+          port: 6004
+        - name: 192.168.10.14/sda
+          port: 6001
+        - name: 192.168.10.14/sdb
+          port: 6002
+        - name: 192.168.10.14/sdc
+          port: 6003
+        - name: 192.168.10.14/sdd
+          port: 6004
