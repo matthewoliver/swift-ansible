@@ -36,3 +36,11 @@
   template: src=rsyncd.conf.j2 dest=/etc/rsyncd.conf owner=root mode=0644
   notify: 
     - restart rsync server
+
+- name: "Create rsync.d directory"
+  file: path=/etc/rsyncd.d state=directory
+
+- name: "Dropping rsyncd container configuration"
+  template: src=rsyncd-container.conf.j2 dest=/etc/rsyncd.d/container.conf owner=root mode=0644
+  notify: 
+    - restart rsync server

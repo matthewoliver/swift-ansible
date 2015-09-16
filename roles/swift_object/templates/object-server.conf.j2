@@ -212,6 +212,7 @@ concurrency = 6
 # than or equal to this number. By default(auto), handoff partitions will be
 # removed  when it has successfully replicated to all the canonical nodes.
 # handoff_delete = auto
+rsync_module = {replication_ip}::object
 
 [object-updater]
 # You can override the default log routing for this app here (don't use set!):

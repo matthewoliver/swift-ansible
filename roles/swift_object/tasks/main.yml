@@ -37,3 +37,11 @@
   template: src=rsyncd.conf.j2 dest=/etc/rsyncd.conf owner=root mode=0644
   notify: 
     - restart rsync server
+
+- name: "Create rsync.d directory"
+  file: path=/etc/rsyncd.d state=directory
+
+- name: "Dropping rsyncd object configuration"
+  template: src=rsyncd-object.conf.j2 dest=/etc/rsyncd.d/object.conf owner=root mode=0644
+  notify: 
+    - restart rsync server
