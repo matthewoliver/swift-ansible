@@ -1,0 +1,11 @@
+
+{% if statsd_host is defined %}
+{%   set statsd = 1 %}
+log_statsd_host = {{ statsd_host }}
+{% endif %}
+{% if statsd is defined %}
+log_statsd_port = {{ statsd_port | default(8125) }}
+log_statsd_default_sample_rate = {{ statsd_default_sample_rate | default('1.0') }}
+log_statsd_sample_rate_factor = {{ statsd_sample_rate_factor | default('1.0') }}
+log_statsd_metric_prefix = {{ statsd_metric_prefix | default(inventory_hostname) }}
+{% endif %}

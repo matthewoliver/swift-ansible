@@ -62,6 +62,7 @@ user = {{ user }}
 # log_udp_host =
 # log_udp_port = 514
 #
+{% include "statsd.j2" %} 
 # You can enable StatsD logging here:
 # log_statsd_host = localhost
 # log_statsd_port = 8125
@@ -78,9 +79,9 @@ user = {{ user }}
 
 [pipeline:main]
 {% if authtoken_active == 'true' %}
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit authtoken keystoneauth container-quotas account-quotas slo dlo proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit authtoken keystoneauth copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {% else %}
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth container-quotas account-quotas slo dlo proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth copy container-quotas account-quotas slo dlo proxy-logging versioned_writes proxy-server
 {% endif %}
 [app:proxy-server]
 use = egg:swift#proxy
@@ -313,7 +314,7 @@ use = egg:swift#keystoneauth
 # prefixes, a value of '' (two single quote characters) indicates a
 # blank/empty prefix. Except for the blank/empty prefix, an underscore ('_')
 # character is appended to the value unless already present.
-# reseller_prefix = AUTH
+reseller_prefix = {{ reseller_prefix }}
 #
 # The user must have at least one role named by operator_roles on a
 # project in order to create, delete and modify containers and objects
@@ -698,3 +699,24 @@ use = egg:swift#xprofile
 #
 # unwind the iterator of applications
 # unwind = false
+# Note: Put after slo, dlo in the pipeline.
+# If you don't put it in the pipeline, it will be inserted automatically.
+[filter:versioned_writes]
+use = egg:swift#versioned_writes
+# Enables using versioned writes middleware and exposing configuration
+# settings via HTTP GET /info.
+# WARNING: Setting this option bypasses the "allow_versions" option
+# in the container configuration file, which will be eventually
+# deprecated. See documentation for more details.
+# allow_versioned_writes = false
+
+# Note: Put after auth and before dlo and slo middlewares.
+# If you don't put it in the pipeline, it will be inserted for you.
+[filter:copy]
+use = egg:swift#copy
+# Set object_post_as_copy = false to turn on fast posts where only the metadata
+# changes are stored anew and the original data file is kept in place. This
+# makes for quicker posts.
+# When object_post_as_copy is set to True, a POST request will be transformed
+# into a COPY request where source and destination objects are the same.
+# object_post_as_copy = true

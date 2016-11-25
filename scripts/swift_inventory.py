@@ -55,6 +55,7 @@ DEFAULT_AUTHTOKEN_SETTINGS = {
     'admin_tenant_name': 'service',
     'admin_user': 'swift',
     'admin_password': 'ADMIN',
+    'reseller_prefix': 'AUTH',
 }
 
 DATA_ORDER = [
@@ -177,6 +178,16 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     if _swift['swift'].get('git_post_checkout'):
         swift_options.append('git_post_checkout=%s' % \
                              _swift['swift'].get('git_post_checkout'))
+    statsd = _swift['swift'].get('statsd', [])
+    if statsd.get('host'):
+        swift_options.append('statsd_host=%(host)s' % statsd)
+        swift_options.append('statsd_port=%s' % statsd.get('port', '8125'))
+        swift_options.append('statsd_metric_prefix=%s' % \
+                             statsd.get('metric_prefix', ''))
+        swift_options.append('statsd_default_sample_rate=%s' % \
+                             statsd.get('default_sample_rate', '1.0'))
+        swift_options.append('statsd_sample_rate_factor=%s' % \
+                             statsd.get('sample_rate_factor', '1.0'))
     output_path = _swift['swift'].get("output_directory", DEFAULT_OUTPUT_DIR)
     output_file = _swift['swift'].get("output_filename",
                                       DEFAULT_OUTPUT_FILENAME)
@@ -236,6 +247,8 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
                                     "%(admin_user)s" % authtoken)
         _write_to_file(output_fd, "admin_password="
                                     "%(admin_password)s" % authtoken)
+        _write_to_file(output_fd, "reseller_prefix="
+                                    "%(reseller_prefix)s" % authtoken)
 
     _write_to_file(output_fd, "\n[account]")
 

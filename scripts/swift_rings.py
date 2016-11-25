@@ -6,6 +6,7 @@ from swift.cli.ringbuilder import main as rb_main
 
 import sys
 import threading
+import pickle
 import yaml
 
 USAGE = "usage: %prog -s <swift setup yaml>"
@@ -26,10 +27,33 @@ DEFAULT_SECTION_PORT = {
     'object': DEFAULT_OBJECT_PORT,
 }
 
+class RingValidationError(Exception):
+    pass
 
-def create_buildfile(build_file, part_power, repl, min_part_hours):
-    run_and_wait(rb_main, ["swift-ring-builder", build_file, "create",
-                 part_power, repl, min_part_hours])
+def create_buildfile(build_file, part_power, repl, min_part_hours,
+                     update=False, data=None):
+    if update:
+        # build file exists, so lets just update the existing build file
+        if not data:
+            data = get_build_file_data(build_file)
+            if data is None:
+                data = {}
+
+        if repl != data.get('replicas') and not validate:
+            run_and_wait(rb_main, ["swift-ring-builder", build_file,
+                                   "set_replicas", repl])
+        if min_part_hours != data.get('min_part_hours') and not validate:
+            run_and_wait(rb_main, ["swift-ring-builder", build_file,
+                                   "set_min_part_hours", min_part_hours])
+        if part_power != data.get('part_power'):
+            raise RingValidationError('Part power cannot be changed! '
+                                      'you must rebuild the ring if you need '
+                                      'to change it.\nRing part power: %s '
+                                      'Inventory part power: %s'
+                                      % (data.get('part_power'), part_power))
+    else:
+        run_and_wait(rb_main, ["swift-ring-builder", build_file, "create",
+                     part_power, repl, min_part_hours])
 
 
 def add_host_to_ring(build_file, host):
@@ -37,10 +61,12 @@ def add_host_to_ring(build_file, host):
     if host.get('region') is not None:
         host_str += 'r%(region)d' % host
     host_str += "z%d" % (host.get('zone', DEFAULT_HOST_ZONE))
-    host_str += "-%(host)s:%(port)d" % host
-    if host.get('repl_port'):
-        r_ip = host.get('repl_ip', host['host'])
-        host_str += "R%s:%d" % (r_ip, host['repl_port'])
+    ip = host.get('swift_ip', host['host'])
+    host_str += "-%s:%d" % (ip, host['port'])
+    if host.get('repl_port') or host.get('repl_ip'):
+        r_ip = host.get('repl_ip', ip)
+        r_port = host.get('repl_port', host['port'])
+        host_str += "R%s:%d" % (r_ip, r_port)
     host_str += "/%(drive)s" % host
 
     weight = host.get('weight', DEFAULT_HOST_WEIGHT)
@@ -63,17 +89,33 @@ def check_section(conf, section):
         print("Section %s doesn't exist" % (section))
         sys.exit(2)
 
+def get_build_file_data(build_file):
+    build_file_data = None
+    if exists(build_file):
+        try:
+            with open(build_file) as bf_stream:
+                build_file_data = pickle.load(bf_stream)
+        except Exception as ex:
+            print("Error: failed to load build file '%s': %s" % (build_file,
+                                                                 ex))
+            build_file_data = None
+    return build_file_data
 
 def build_ring(section, conf, part_power, hosts):
     # Create the build file
     build_file = "%s.builder" % (section)
+    build_file_data = get_build_file_data(build_file)
+    update = build_file_data is not None
+
     repl = conf.get('repl_number', DEFAULT_REPL)
     min_part_hours = conf.get('min_part_hours',
                               DEFAULT_MIN_PART_HOURS)
-    create_buildfile(build_file, part_power, repl, min_part_hours)
+    part_power = conf.get('part_power', part_power)
+    create_buildfile(build_file, part_power, repl, min_part_hours, update,
+                     data=build_file_data)
 
     # Add the hosts
-    if not has_section(conf, 'hosts') or len(conf.get('hosts')) == 0:
+    if not hosts:
         print("No hosts/drives assigned to the %s ring" % section)
         sys.exit(3)
 

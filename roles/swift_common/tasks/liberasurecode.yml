@@ -1,0 +1,15 @@
+---
+- name: "Install liberasurecode dependencies (Debian/Ubuntu)"
+  apt: pkg={{ item }} state=installed update_cache=yes
+  with_items: "{{ liberasurecode_packages.debian }}"
+  when: ansible_os_family == 'Debian'
+
+- name: "Install liberasurecode dependencies (RedHat)"
+  yum: pkg={{ item }} state=installed 
+  with_items: "{{ liberasurecode_packages.redhat }}"
+  when: ansible_os_family == 'RedHat'
+  
+- name: "Checkout liberasurecode git repo"
+  git: repo={{ liberasurecode_git_repo }} version={{ liberasurecode_git_tag }} dest=/opt/swift/liberasurecode update=yes
+  notify:
+    - Rebuild liberasurecode

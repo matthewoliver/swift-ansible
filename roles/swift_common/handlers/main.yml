@@ -4,3 +4,8 @@
 
 - name: "Install swift"
   shell: chdir=/opt/swift/swift python setup.py install
+
+- name: "Rebuild liberasurecode"
+  shell: "./autogen.sh && ./configure && make && make install"
+  args:
+    chdir: /opt/swift/liberasurecode

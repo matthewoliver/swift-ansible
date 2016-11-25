@@ -18,3 +18,19 @@ swift_common_packages:
     - git-core
     - python-setuptools
     - python-pip
+
+liberasurecode_git_repo: 'https://github.com/openstack/liberasurecode'
+liberasurecode_git_tag: 'master'
+liberasurecode_packages:
+  debian:
+    - build-essential
+    - autoconf
+    - automake
+    - libtool
+
+  redhat:
+    - gcc
+    - make 
+    - autoconf
+    - automake
+    - libtool

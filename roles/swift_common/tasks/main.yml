@@ -12,6 +12,8 @@
 - include: redhat.yml
   when: ansible_os_family == 'RedHat'
 
+- include: liberasurecode.yml
+
 - name: "Create swift group"
   group: name={{ user }} state=present system=yes
 

@@ -1,5 +1,5 @@
 [DEFAULT]
-bind_ip = {{ inventory_hostname }}
+# bind_ip = {{ inventory_hostname }}
 bind_port = {{ account_server_port }}
 # bind_timeout = 30
 # backlog = 4096
@@ -40,6 +40,7 @@ log_facility = LOG_LOCAL1
 # log_statsd_default_sample_rate = 1.0
 # log_statsd_sample_rate_factor = 1.0
 # log_statsd_metric_prefix =
+{% include "statsd.j2" %} 
 #
 # If you don't mind the extra disk space usage in overhead, you can turn this
 # on to preallocate disk space with SQLite databases to decrease fragmentation.

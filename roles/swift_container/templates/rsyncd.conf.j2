@@ -2,6 +2,7 @@ uid = {{ user }}
 gid = {{ user }}
 log file = /var/log/rsyncd.log
 pid file = /var/run/rsyncd.pid
-address = {{ bind_ip | default(inventory_hostname) }}
+#address = {{ bind_ip | default(inventory_hostname) }}
+address = {{ bind_ip | default('0.0.0.0') }}
 
 &include /etc/rsyncd.d
