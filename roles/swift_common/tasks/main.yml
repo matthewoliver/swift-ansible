@@ -1,4 +1,3 @@
-
 - name: "Setup hosts file"
   lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_default_ipv4.address }} {{item}}" state=present
   when: hostvars[item].ansible_default_ipv4.address is defined
@@ -12,6 +11,19 @@
 - include: redhat.yml
   when: ansible_os_family == 'RedHat'
 
+- name: install python modules with pip
+  pip: name={{ item }} state=present extra_args='--upgrade'
+  with_items:
+    - tox
+    - nose
+    - xattr
+    - git-review
+    - coverage
+    - Paste
+    - pyudev
+    - pip
+    - setuptools
+
 - include: liberasurecode.yml
 
 - name: "Create swift group"
@@ -20,11 +32,8 @@
 - name: "Create a swift user"
   user: name={{ user }} state=present shell=/bin/false home=/opt/swift system=yes
 
-- name: "Checkout git repo"
+- name: "Checkout swift git repo"
   git: repo={{ swift_repo }} version={{ swift_repo_tag }} dest=/opt/swift/swift update=yes
-  notify:
-    - Install swift dependencies
-    - Install swift
   tags:
     - deploy_code
 
@@ -33,6 +42,21 @@
   args:
     chdir: /opt/swift/swift 
   when: git_post_checkout is defined 
+  tags:
+    - deploy_code
+
+- name: install swift's dependencies
+  pip: requirements=/opt/swift/swift/requirements.txt
+  tags:
+    - deploy_code
+
+- name: install swift's test dependencies
+  pip: requirements=/opt/swift/swift/test-requirements.txt
+  tags:
+    - deploy_code
+
+- name: install swift
+  command: python setup.py install chdir=/opt/swift/swift
   tags:
     - deploy_code
 

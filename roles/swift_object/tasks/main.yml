@@ -1,17 +1,9 @@
 ---
 - name: "swift object server configuration"
   template: src=object-server.conf.j2 dest=/etc/swift/object-server.conf owner={{ user }} mode=0644
-  notify: 
-    - (re)start object server
-    - (re)start object auditor
-    - (re)start object replicator
-    - (re)start object updater
-    - (re)start object reconstructor
 
 - name: "swift object expirer configuration"
   template: src=object-expirer.conf.j2 dest=/etc/swift/object-expirer.conf owner={{ user }} mode=0644
-  notify: 
-    - (re)start object expirer
 
 - name: "Set object server to start at boot"
   cron: special_time=reboot job="swift-init object-server start" name="start object server"

@@ -11,36 +11,23 @@ local:
 
 # Swift settings are global through out the cluster.
 swift:
-  # Definging part_power here will make it the default, it can also be specified in sections below.
   part_power: 10
-  # output_directory is the location where the inventory script will output the out inventory (hosts file). Good if
-  # you have more then 1 config.
-  output_directory: /tmp/swift
+  output_directory: .
   output_filename: hosts
   user: swift
   hash_path_suffix: asdfnasdjkfnsdkfjnsd
   hash_path_prefix: asldfnslfn234klnslkd
-  syslog_host: 10.1.1.1:514
-  git_repo: 'https://github.com/matthewoliver/swift'
-  # git_tag can be a branch, tag or sha
-  git_tag: sharding_lock
-  # git_past_checkout can be used to run a command after the checkout.. like reviewing a patch
-  git_post_checkout: git fetch https://git.openstack.org/openstack/swift refs/changes/38/347538/14 && git checkout FETCH_HEAD
+  #syslog_host: 10.1.1.1:514
+  git_repo: 'https://github.com/openstack/swift'
+  #git_tag: sharding_lock
   memcache_servers:
-    - 192.168.9.11:11211
-    - 192.168.9.12:11211
+    - 192.168.9.10:11211
   statsd:
-    # If host is empty/not defined, then no statsd configuration will be added.
     host: 192.168.9.50
-    # port: 8125
-    # metric_prefix will be prefixed to all metric sent, default empty string
+    port: 8125
     # metric_prefix:
-    # default_sample_rate and sample_rate_factor are more complecated, see statsd for more details, they both default
-    # to 1.0.
-    # default_sample_rate: 1.0
-    # sample_rate_factor: 1.0
-  # rings_dir will speficy where to build the rings (from /etc/swift) before moving them out.
-  # rings_dir: rings
+    default_sample_rate: 1.0
+    sample_rate_factor: 1.0 
 
 # Global hosts
 # Hosts can be defined in the sections below or here, the advantage of
@@ -49,133 +36,107 @@ swift:
 # When need to reference a global host use the form:
 #   - name: <host>/<drive>
 hosts:
-  - host: 192.168.9.105
+  - host: 192.168.9.100
     mountpoint: /mnt/
     region: 1
     zone: 1
+    swift_ip: 192.168.9.100
+    repl_ip: 192.168.9.100
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-        region: 1
-        zone: 1
-        mountpoint: /mnt/drives/
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
-  - host: 192.168.9.106
+  - host: 192.168.9.101
     drive: sda
     mountpoint: /mnt/
     region: 1
     zone: 2
+    swift_ip: 192.168.9.101
+    repl_ip: 192.168.9.101
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
-  - host: 192.168.9.205
+  - host: 192.168.9.102
     drive: sda
     mountpoint: /mnt/
     region: 2
     zone: 1
+    swift_ip: 192.168.9.102
+    repl_ip: 192.168.9.102
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
-        weight: 512
-  - host: 192.168.9.206
-    drive: sda
-    mountpoint: /mnt/
-    region: 2
-    zone: 2
-    drives:
-      - name: xvdb
-        weight: 512
-      - name: xvdc
-        weight: 512
-      - name: xvdd
-        weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
 
 proxy:
-  # port: 8080
   authtoken: 
-    # make active: true to turn on keystone auth. TODO do the same for encryption
     active: false
     delay_auth_decision: true
     auth_version: v2.0
-    auth_host: keystone.local.lan
+    auth_host: 192.168.9.60
     auth_port: 35357
-    auth_protocol: https
-    auth_uri: http://keystonehost:5000/
+    auth_protocol: http
+    auth_uri: http://192.168.9.60:5000/
     admin_tenant_name: service
     admin_user: swift
-    admin_password: ADMIN
+    admin_password: sw1ftpa55w0rd
+    reseller_prefix: KEY
   hosts:
-    - host: 192.168.9.11
-    - host: 192.168.9.12
+    - host: 192.168.9.10
 
 account:
   repl_number: 3
   min_part_hours: 1
-  # the port level defied here are used in the server config file
   port: 6002
-  # part_power
   hosts:
-    - name: 192.168.9.105/xvdb
-    - name: 192.168.9.105/xvdc
-    - name: 192.168.9.105/xvdd
-    - name: 192.168.9.105/xvdf
-    - name: 192.168.9.106/xvdb
-    - name: 192.168.9.106/xvdc
-    - name: 192.168.9.106/xvdd
-    - name: 192.168.9.106/xvdf
-    - name: 192.168.9.205/xvdb
-    - name: 192.168.9.205/xvdc
-    - name: 192.168.9.205/xvdd
-    - name: 192.168.9.205/xvdf
-    - name: 192.168.9.206/xvdb
-    - name: 192.168.9.206/xvdc
-    - name: 192.168.9.206/xvdd
-    - name: 192.168.9.206/xvdf
+    - name: 192.168.9.100/sdb1
+    - name: 192.168.9.100/sdc1
+    - name: 192.168.9.100/sdd1
+    - name: 192.168.9.100/sde1
+    - name: 192.168.9.101/sdb1
+    - name: 192.168.9.101/sdc1
+    - name: 192.168.9.101/sdd1
+    - name: 192.168.9.101/sde1
+    - name: 192.168.9.102/sdb1
+    - name: 192.168.9.102/sdc1
+    - name: 192.168.9.102/sdd1
+    - name: 192.168.9.102/sde1
 
 container:
   repl_number: 3
-  # the port level defied here are used in the server config file
   port: 6001
-  # part_power:
   hosts:
-    - name: 192.168.9.105/xvdb
-    - name: 192.168.9.105/xvdc
-    - name: 192.168.9.105/xvdd
-    - name: 192.168.9.105/xvdf
-    - name: 192.168.9.106/xvdb
-    - name: 192.168.9.106/xvdc
-    - name: 192.168.9.106/xvdd
-    - name: 192.168.9.106/xvdf
-    - name: 192.168.9.205/xvdb
-    - name: 192.168.9.205/xvdc
-    - name: 192.168.9.205/xvdd
-    - name: 192.168.9.205/xvdf
-    - name: 192.168.9.206/xvdb
-    - name: 192.168.9.206/xvdc
-    - name: 192.168.9.206/xvdd
-    - name: 192.168.9.206/xvdf
+    - name: 192.168.9.100/sdb1
+    - name: 192.168.9.100/sdc1
+    - name: 192.168.9.100/sdd1
+    - name: 192.168.9.100/sde1
+    - name: 192.168.9.101/sdb1
+    - name: 192.168.9.101/sdc1
+    - name: 192.168.9.101/sdd1
+    - name: 192.168.9.101/sde1
+    - name: 192.168.9.102/sdb1
+    - name: 192.168.9.102/sdc1
+    - name: 192.168.9.102/sdd1
+    - name: 192.168.9.102/sde1
 
 storage_policies:
   default: gold
-  # the port level defied here are used in the server config file
   port: 6000
   policies:
     - name: gold
@@ -183,61 +144,29 @@ storage_policies:
       type: replication
       repl_number: 3
       min_part_hours: 1
-      # part_power: 
       hosts:
-        # when defining hosts, you can define new ones her
-        - host: 192.168.9.105
-          mountpoint: /mnt/
-          region: 1
-          zone: 1
-          # swift_ip ip to put in the ring as the host ip. Use this if the host is the managerment inteace and
-          # swift traffic will talk on a different interface.
-          swift_ip: 192.168.122.105
-          repl_ip: 192.168.123.105
-          repl_port: 8001
-          drives:
-            - name: xvdb
-              weight: 512
-              region: 1
-              zone: 1
-              mountpoint: /mnt/drives/
-              port: 8001
-            - name: xvdc
-              weight: 512
-            - name: xvdd
-              weight: 512
-            - name: xvdf
-              weight: 512
-        # Or select global ones that you specified earlier
-        - name: 192.168.9.105/xvdb
-          port: 8002
-          repl_ip: 192.168.123.105
-          repl_port: 8001
-        - name: 192.168.9.105/xvdc
-        - name: 192.168.9.105/xvdd
-        - name: 192.168.9.105/xvdf
-        - name: 192.168.9.106/xvdb
-        - name: 192.168.9.106/xvdc
-        - name: 192.168.9.106/xvdd
-        - name: 192.168.9.106/xvdf
-        - name: 192.168.9.205/xvdb
-        - name: 192.168.9.205/xvdc
-        - name: 192.168.9.205/xvdd
-        - name: 192.168.9.205/xvdf
-        - name: 192.168.9.206/xvdb
-        - name: 192.168.9.206/xvdc
-        - name: 192.168.9.206/xvdd
-        - name: 192.168.9.206/xvdf
+        - name: 192.168.9.100/sdb1
+        - name: 192.168.9.100/sdc1
+        - name: 192.168.9.100/sdd1
+        - name: 192.168.9.100/sde1
+        - name: 192.168.9.101/sdb1
+        - name: 192.168.9.101/sdc1
+        - name: 192.168.9.101/sdd1
+        - name: 192.168.9.101/sde1
+        - name: 192.168.9.102/sdb1
+        - name: 192.168.9.102/sdc1
+        - name: 192.168.9.102/sdd1
+        - name: 192.168.9.102/sde1
     - name: silver
       index: 1
       type: replication
       repl_number: 2
       hosts:
-        - name: 192.168.9.105/xvdb
-        - name: 192.168.9.105/xvdc
-        - name: 192.168.9.105/xvdd
-        - name: 192.168.9.105/xvdf
-        - name: 192.168.9.106/xvdb
-        - name: 192.168.9.106/xvdc
-        - name: 192.168.9.106/xvdd
-        - name: 192.168.9.106/xvdf
+        - name: 192.168.9.100/sdb1
+        - name: 192.168.9.100/sdc1
+        - name: 192.168.9.100/sdd1
+        - name: 192.168.9.100/sde1
+        - name: 192.168.9.101/sdb1
+        - name: 192.168.9.101/sdc1
+        - name: 192.168.9.101/sdd1
+        - name: 192.168.9.101/sde1

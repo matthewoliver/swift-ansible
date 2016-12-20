@@ -12,8 +12,6 @@
 
 - name: "swift proxy server configuration"
   template: src=proxy-server.conf.j2 dest=/etc/swift/proxy-server.conf owner={{ user }} mode=0644
-  notify: 
-    - (re)start proxy server
 
 - name: "Set proxy server to start at boot"
   cron: special_time=reboot job="swift-init proxy-server start" name="start wift proxy"

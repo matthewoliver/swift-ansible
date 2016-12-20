@@ -1,0 +1,8 @@
+---
+- hosts: swift
+  user: root
+  tasks:
+    - name: "Make sure /etc/swift exists"
+      file: state=directory path=/etc/swift/ mode=0755
+    - name: "Copy the rings over"
+      copy: src={{ rings_dir }}/ dest=/etc/swift/ mode=644 owner=swift

@@ -29,5 +29,6 @@
   user: root
   roles:
     - swift_object  
+    - prepare_disks
   tags:
     - object

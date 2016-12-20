@@ -11,5 +11,14 @@
   
 - name: "Checkout liberasurecode git repo"
   git: repo={{ liberasurecode_git_repo }} version={{ liberasurecode_git_tag }} dest=/opt/swift/liberasurecode update=yes
-  notify:
-    - Rebuild liberasurecode
+
+- name: "Rebuild liberasurecode"
+  shell: "./autogen.sh && ./configure && make && make install"
+  args:
+    chdir: /opt/swift/liberasurecode
+
+- name: add path to /etc/ld.so.conf
+  lineinfile: dest=/etc/ld.so.conf line="/usr/local/lib"
+
+- name: run ldconfig
+  shell: ldconfig

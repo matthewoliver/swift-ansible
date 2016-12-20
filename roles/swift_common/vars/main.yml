@@ -18,6 +18,27 @@ swift_common_packages:
     - git-core
     - python-setuptools
     - python-pip
+    - sqlite
+    - xfsprogs
+    - git
+    - libffi-devel
+    - xinetd
+    - python-devel
+    - python-simplejson
+    - pyxattr
+    - python-eventlet
+    - python-greenlet
+    - python-netifaces
+    - python-dns
+    - python-mock
+    - tree
+    - vim
+    - make
+    - autoconf
+    - automake
+    - libtool
+    - openssl-devel
+    - sysstat
 
 liberasurecode_git_repo: 'https://github.com/openstack/liberasurecode'
 liberasurecode_git_tag: 'master'

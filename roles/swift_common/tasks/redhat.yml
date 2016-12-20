@@ -1,4 +1,5 @@
----
+- name: install epel-release
+  yum: name=epel-release state=present
 
 - name: "install Redhat/CentOS common swift packages"
   yum: pkg={{ item }} state=installed 
