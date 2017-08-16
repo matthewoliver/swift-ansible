@@ -12,17 +12,17 @@ local:
 # Swift settings are global through out the cluster.
 swift:
   part_power: 10
-  output_directory: /tmp/swift
+  output_directory: .
   output_filename: hosts
   user: swift
   hash_path_suffix: asdfnasdjkfnsdkfjnsd
   hash_path_prefix: asldfnslfn234klnslkd
   #syslog_host: 10.1.1.1:514
-  git_repo: 'https://github.com/matthewoliver/swift'
-  git_tag: sharding_lock
+  git_repo: 'https://github.com/openstack/swift'
+  git_tag: master
   memcache_servers:
+    - 192.168.9.10:11211
     - 192.168.9.11:11211
-    - 192.168.9.12:11211
   statsd:
     host: 192.168.9.50
     port: 8125
@@ -37,129 +37,129 @@ swift:
 # When need to reference a global host use the form:
 #   - name: <host>/<drive>
 hosts:
-  - host: 192.168.9.105
+  - host: 192.168.9.100
     mountpoint: /mnt/
     region: 1
     zone: 1
-    swift_ip: 192.168.122.105
-    repl_ip: 192.168.123.105
+    swift_ip: 192.168.9.100
+    #repl_ip: 192.168.123.105
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
-  - host: 192.168.9.106
+  - host: 192.168.9.101
     drive: sda
     mountpoint: /mnt/
     region: 1
     zone: 2
-    swift_ip: 192.168.122.106
-    repl_ip: 192.168.123.106
+    swift_ip: 192.168.9.101
+    #repl_ip: 192.168.123.106
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
-  - host: 192.168.9.205
+  - host: 192.168.9.102
     drive: sda
     mountpoint: /mnt/
     region: 2
     zone: 1
-    swift_ip: 192.168.122.205
-    repl_ip: 192.168.123.205
+    swift_ip: 192.168.9.102
+    #repl_ip: 192.168.123.205
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
-  - host: 192.168.9.206
+  - host: 192.168.9.103
     drive: sda
     mountpoint: /mnt/
     region: 2
     zone: 2
-    swift_ip: 192.168.122.206
-    repl_ip: 192.168.123.206
+    swift_ip: 192.168.9.103
+    #repl_ip: 192.168.123.206
     drives:
-      - name: xvdb
+      - name: sdb1
         weight: 512
-      - name: xvdc
+      - name: sdc1
         weight: 512
-      - name: xvdd
+      - name: sdd1
         weight: 512
-      - name: xvdf
+      - name: sde1
         weight: 512
 
 proxy:
   authtoken: 
-    active: true
+    active: false
     delay_auth_decision: true
     auth_version: v2.0
-    auth_host: 192.168.9.51
+    auth_host: 192.168.9.60
     auth_port: 35357
     auth_protocol: http
-    auth_uri: http://192.168.9.51:5000/
+    auth_uri: http://192.168.9.60:5000/
     admin_tenant_name: service
     admin_user: swift
     admin_password: sw1ftpa55w0rd
     reseller_prefix: KEY
   hosts:
+    - host: 192.168.9.10
     - host: 192.168.9.11
-    - host: 192.168.9.12
 
 account:
   repl_number: 3
   min_part_hours: 1
   port: 6002
   hosts:
-    - name: 192.168.9.105/xvdb
-    - name: 192.168.9.105/xvdc
-    - name: 192.168.9.105/xvdd
-    - name: 192.168.9.105/xvdf
-    - name: 192.168.9.106/xvdb
-    - name: 192.168.9.106/xvdc
-    - name: 192.168.9.106/xvdd
-    - name: 192.168.9.106/xvdf
-    - name: 192.168.9.205/xvdb
-    - name: 192.168.9.205/xvdc
-    - name: 192.168.9.205/xvdd
-    - name: 192.168.9.205/xvdf
-    - name: 192.168.9.206/xvdb
-    - name: 192.168.9.206/xvdc
-    - name: 192.168.9.206/xvdd
-    - name: 192.168.9.206/xvdf
+    - name: 192.168.9.100/sdb1
+    - name: 192.168.9.100/sdc1
+    - name: 192.168.9.100/sdd1
+    - name: 192.168.9.100/sde1
+    - name: 192.168.9.101/sdb1
+    - name: 192.168.9.101/sdc1
+    - name: 192.168.9.101/sdd1
+    - name: 192.168.9.101/sde1
+    - name: 192.168.9.102/sdb1
+    - name: 192.168.9.102/sdc1
+    - name: 192.168.9.102/sdd1
+    - name: 192.168.9.102/sde1
+    - name: 192.168.9.103/sdb1
+    - name: 192.168.9.103/sdc1
+    - name: 192.168.9.103/sdd1
+    - name: 192.168.9.103/sde1
 
 container:
   repl_number: 3
   port: 6001
   hosts:
-    - name: 192.168.9.105/xvdb
-    - name: 192.168.9.105/xvdc
-    - name: 192.168.9.105/xvdd
-    - name: 192.168.9.105/xvdf
-    - name: 192.168.9.106/xvdb
-    - name: 192.168.9.106/xvdc
-    - name: 192.168.9.106/xvdd
-    - name: 192.168.9.106/xvdf
-    - name: 192.168.9.205/xvdb
-    - name: 192.168.9.205/xvdc
-    - name: 192.168.9.205/xvdd
-    - name: 192.168.9.205/xvdf
-    - name: 192.168.9.206/xvdb
-    - name: 192.168.9.206/xvdc
-    - name: 192.168.9.206/xvdd
-    - name: 192.168.9.206/xvdf
+    - name: 192.168.9.100/sdb1
+    - name: 192.168.9.100/sdc1
+    - name: 192.168.9.100/sdd1
+    - name: 192.168.9.100/sde1
+    - name: 192.168.9.101/sdb1
+    - name: 192.168.9.101/sdc1
+    - name: 192.168.9.101/sdd1
+    - name: 192.168.9.101/sde1
+    - name: 192.168.9.102/sdb1
+    - name: 192.168.9.102/sdc1
+    - name: 192.168.9.102/sdd1
+    - name: 192.168.9.102/sde1
+    - name: 192.168.9.103/sdb1
+    - name: 192.168.9.103/sdc1
+    - name: 192.168.9.103/sdd1
+    - name: 192.168.9.103/sde1
 
 storage_policies:
   default: gold
@@ -171,32 +171,32 @@ storage_policies:
       repl_number: 3
       min_part_hours: 1
       hosts:
-        - name: 192.168.9.105/xvdb
-        - name: 192.168.9.105/xvdc
-        - name: 192.168.9.105/xvdd
-        - name: 192.168.9.105/xvdf
-        - name: 192.168.9.106/xvdb
-        - name: 192.168.9.106/xvdc
-        - name: 192.168.9.106/xvdd
-        - name: 192.168.9.106/xvdf
-        - name: 192.168.9.205/xvdb
-        - name: 192.168.9.205/xvdc
-        - name: 192.168.9.205/xvdd
-        - name: 192.168.9.205/xvdf
-        - name: 192.168.9.206/xvdb
-        - name: 192.168.9.206/xvdc
-        - name: 192.168.9.206/xvdd
-        - name: 192.168.9.206/xvdf
+        - name: 192.168.9.100/sdb1
+        - name: 192.168.9.100/sdc1
+        - name: 192.168.9.100/sdd1
+        - name: 192.168.9.100/sde1
+        - name: 192.168.9.101/sdb1
+        - name: 192.168.9.101/sdc1
+        - name: 192.168.9.101/sdd1
+        - name: 192.168.9.101/sde1
+        - name: 192.168.9.102/sdb1
+        - name: 192.168.9.102/sdc1
+        - name: 192.168.9.102/sdd1
+        - name: 192.168.9.102/sde1
+        - name: 192.168.9.103/sdb1
+        - name: 192.168.9.103/sdc1
+        - name: 192.168.9.103/sdd1
+        - name: 192.168.9.103/sde1
     - name: silver
       index: 1
       type: replication
       repl_number: 2
       hosts:
-        - name: 192.168.9.105/xvdb
-        - name: 192.168.9.105/xvdc
-        - name: 192.168.9.105/xvdd
-        - name: 192.168.9.105/xvdf
-        - name: 192.168.9.106/xvdb
-        - name: 192.168.9.106/xvdc
-        - name: 192.168.9.106/xvdd
-        - name: 192.168.9.106/xvdf
+        - name: 192.168.9.100/sdb1
+        - name: 192.168.9.100/sdc1
+        - name: 192.168.9.100/sdd1
+        - name: 192.168.9.100/sde1
+        - name: 192.168.9.101/sdb1
+        - name: 192.168.9.101/sdc1
+        - name: 192.168.9.101/sdd1
+        - name: 192.168.9.101/sde1

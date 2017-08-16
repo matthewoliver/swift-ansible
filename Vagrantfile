@@ -1,5 +1,5 @@
-proxy_vms = 1
-storage_vms = 3
+proxy_vms = 2
+storage_vms = 4
 statsd_vms = 1
 keystone_vms = 1
 

@@ -63,6 +63,13 @@ NOTE: in my test cluster my storage nodes are members of the container, account
 and object groups, so by using the container group (ansible container) above
 will hit all my storage nodes.
 
+To build and deploy the rings:
+```
+   mkdir rings && cd rings
+   python ../scripts/swift_rings.py -s ../swift_setup.yml
+   cd -
+   ansible-playbook -i hosts deploy_swift_rings.yml
+```
 
 Swift-Ansible can also be installed on VMs created by Vagrant, currently this
 will require the following manual steps::

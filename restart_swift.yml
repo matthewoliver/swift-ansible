@@ -3,15 +3,15 @@
   user: root
   tasks:
     - name: restart proxy server
-      shell: swift-init proxy restart
+      shell: swift-init proxy stop && swift-init proxy start 
     - name: restart memcache server
       service: name=memcached state=restarted
       
 - hosts: container
   user: root
   tasks:
-    - name: restart container services
-      shell: swift-init {{ item }} restart
+    - name: restart continer services
+      shell: swift-init {{ item }} stop && swift-init {{ item }} start || swift-init {{ item }} start
       with_items:
         - container-server
         - container-auditor
@@ -23,7 +23,7 @@
   user: root
   tasks:
     - name: restart account services
-      shell: swift-init {{ item }} restart
+      shell: swift-init {{ item }} stop && swift-init {{ item }} start || swift-init {{ item }} start
       with_items:
         - account-server
         - account-auditor
@@ -34,7 +34,7 @@
   user: root
   tasks:
     - name: restart object services
-      shell: swift-init {{ item }} restart
+      shell: swift-init {{ item }} stop && swift-init {{ item }} start || swift-init {{ item }} start
       with_items:
         - object-server
         - object-auditor
