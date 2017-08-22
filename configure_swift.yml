@@ -32,3 +32,10 @@
     - prepare_disks
   tags:
     - object
+
+- hosts: statsd
+  user: root
+  roles:
+    - statsd
+  tags:
+    - statsd

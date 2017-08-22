@@ -20,6 +20,7 @@ swift:
   #syslog_host: 10.1.1.1:514
   git_repo: 'https://github.com/openstack/swift'
   git_tag: master
+  git_post_checkout: git fetch https://git.openstack.org/openstack/swift refs/changes/18/493418/1 && git checkout FETCH_HEAD
   memcache_servers:
     - 192.168.9.10:11211
     - 192.168.9.11:11211
@@ -29,6 +30,7 @@ swift:
     # metric_prefix:
     default_sample_rate: 1.0
     sample_rate_factor: 1.0 
+    deploy: true
 
 # Global hosts
 # Hosts can be defined in the sections below or here, the advantage of

@@ -28,6 +28,7 @@ swift:
     # metric_prefix:
     default_sample_rate: 1.0
     sample_rate_factor: 1.0 
+    deploy: false
 
 # Global hosts
 # Hosts can be defined in the sections below or here, the advantage of

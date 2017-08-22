@@ -27,8 +27,7 @@ RETURN_NOT_DEFINED = 3
 HEADER = """# This file was generated using the %s version %s at %s
 [local]
 localhost ansible_connection=local swift_setup_yaml=%s
-
-[proxy]"""
+"""
 
 CATCH_ALL_GROUPS = """
 [object:children]
@@ -188,6 +187,7 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
                              statsd.get('default_sample_rate', '1.0'))
         swift_options.append('statsd_sample_rate_factor=%s' % \
                              statsd.get('sample_rate_factor', '1.0'))
+        
     output_path = _swift['swift'].get("output_directory", DEFAULT_OUTPUT_DIR)
     output_file = _swift['swift'].get("output_filename",
                                       DEFAULT_OUTPUT_FILENAME)
@@ -201,6 +201,12 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     n = datetime.datetime.now()
     _write_to_file(output_fd, HEADER % (__file__, VERSION, n.ctime(),
                                         setup))
+
+    if statsd.get('host') and statsd.get('deploy', False) == True:
+    	_write_to_file(output_fd, "\n[statsd]")
+        _write_to_file(output_fd, "%s" % (statsd["host"]))
+
+    _write_to_file(output_fd, "\n[proxy]")
 
     # Global hosts
     if _section_defined("hosts"):
