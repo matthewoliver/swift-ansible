@@ -1,0 +1,58 @@
+# If target is a debian/ubuntu system
+- include: debian.yml
+  when: ansible_os_family == 'Debian'
+
+# If target is a centos/redhat system
+- include: redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: "Drop collectd statsd configuration"
+  template:
+    src: collectd_statsd.conf.j2
+    dest: /etc/collectd.d/statsd.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Drop collectd influxdb configuration"
+  template:
+    src: collectd_influxdb.conf.j2
+    dest: /etc/collectd.d/influxdb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - "restart collectd"
+
+- name: "Drop influxdb configuration"
+  template:
+    src: influxdb.conf.j2
+    dest: /etc/influxdb/influxdb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - "restart influxdb"
+
+- name: "enable and start collectd"
+  service:
+    name: collectd
+    state: started
+    enable: yes
+
+- name: "enable and start influxdb"
+  service:
+    name: influxdb
+    state: started
+    enable: yes
+
+- name: "enable and start grafana"
+  service:
+    name: grafana-server
+    state: started
+    enable: yes
+
+- name: "make sure influxdb's database has been created"
+  shell: |
+    curl -G http://{{ influxdb_host }}:8086/query --data-urlencode \
+    "q=CREATE DATABASE {{ influxdb_database }}"

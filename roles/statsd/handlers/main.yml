@@ -1,0 +1,11 @@
+---
+- name: "restart collectd"
+  service: 
+    name: collectd
+    status: restarted
+
+- name: "restart influxdb"
+  service: 
+    name: influxdb
+    status: restarted
+

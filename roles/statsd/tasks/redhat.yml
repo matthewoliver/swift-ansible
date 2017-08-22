@@ -1,0 +1,19 @@
+- name: Install the influxdb repo
+  yum_repository:
+    name: influxdb
+    description: Influxdb yum repo
+    baseurl: https://repos.influxdata.com/rhel/$releasever/$basearch/stable
+    gpgkey: https://repos.influxdata.com/influxdb.key
+    gpgcheck: yes
+    
+- name: Install the grafana repo
+  yum_repository:
+    name: grafana
+    description: grafana yum repo
+    baseurl: https://packagecloud.io/grafana/stable/el/6/$basearch
+    gpgkey: https://packagecloud.io/gpg.key
+    gpgcheck: yes
+
+- name: "install Redhat/CentOS common statsd packages"
+  yum: pkg={{ item }} state=installed 
+  with_items: "{{ statsd_common_packages.redhat }}"

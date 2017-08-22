@@ -37,3 +37,9 @@
   template: src=rsyncd-container.conf.j2 dest=/etc/rsyncd.d/container.conf owner=root mode=0644
   notify: 
     - restart rsync server
+
+- name: "Ensure the /var/cache/swift directory exists"
+  file: patch=/var/cache/swift state=directory owner={{ user }}
+
+- name: "Make sure device locations have the correct ownership"
+  shell: chown {{ user }} -R {{ drives }}/*

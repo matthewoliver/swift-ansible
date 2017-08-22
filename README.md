@@ -80,3 +80,22 @@ will require the following manual steps::
   * `ansible-playbook -i hosts configure_swift.yml`
   * `mkdir rings && cd rings`
   * `python ../scripts/swift_rings.py -s ../swift_setup.yml`
+
+= Statsd role =
+There is now a statsd role, which will deploy collectd, influxdb and grafana.
+It sets up collectd to listen for statdsd and write out to influxdb.
+
+By default it will use the default ports, but check `roles/statsd/vars/main.yml`
+if you want to change anything.
+
+Once complete, you will need to add the influxdb datasource in grafana:
+
+  - browse to: http://<statsd_host>:3000
+  - Default login in admin/admin (you can change this with the `grafana-cli admin reset-admin-password <new-password>` command.
+  - Create an influxdb datasource where:
+    - hosts: http://localhost:8086
+    - database: collectd 
+
+NOTE: You can see if datapoints are making it into influxdb with:
+
+  curl -G http://127.0.0.1:8086/query?pretty=true --data-urlencode "db=collectd" --data-urlencode "q=show series"
