@@ -1,5 +1,5 @@
 ---
-swift_common_packages:
+statsd_common_packages:
   debian:
     - curl
     - python-pip

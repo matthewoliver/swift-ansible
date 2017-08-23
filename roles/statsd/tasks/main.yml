@@ -35,22 +35,22 @@
     - "restart influxdb"
 
 - name: "enable and start collectd"
-  service:
+  systemd:
     name: collectd
     state: started
-    enable: yes
+    enabled: yes
 
 - name: "enable and start influxdb"
-  service:
+  systemd:
     name: influxdb
     state: started
-    enable: yes
+    enabled: yes
 
 - name: "enable and start grafana"
-  service:
+  systemd:
     name: grafana-server
     state: started
-    enable: yes
+    enabled: yes
 
 - name: "make sure influxdb's database has been created"
   shell: |
