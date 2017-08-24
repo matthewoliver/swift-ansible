@@ -33,7 +33,7 @@
     - restart rsync server
 
 - name: "Ensure the /var/cache/swift directory exists"
-  file: patch=/var/cache/swift state=directory owner={{ user }}
+  file: path=/var/cache/swift state=directory owner={{ user }}
 
 - name: "Make sure device locations have the correct ownership"
   shell: chown {{ user }} -R {{ drives }}/*

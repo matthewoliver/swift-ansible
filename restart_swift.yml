@@ -3,7 +3,7 @@
   user: root
   tasks:
     - name: restart proxy server
-      shell: swift-init proxy stop && swift-init proxy start 
+      shell: swift-init proxy stop && swift-init proxy start || swift-init proxy start
     - name: restart memcache server
       service: name=memcached state=restarted
       

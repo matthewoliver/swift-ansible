@@ -181,8 +181,9 @@ def main(setup, verbose=False, dry_run=False, overwrite=True):
     if statsd.get('host'):
         swift_options.append('statsd_host=%(host)s' % statsd)
         swift_options.append('statsd_port=%s' % statsd.get('port', '8125'))
-        swift_options.append('statsd_metric_prefix=%s' % \
-                             statsd.get('metric_prefix', ''))
+	if statsd.get('metric_prefix'):
+        	swift_options.append('statsd_metric_prefix=%s' % \
+                	             statsd.get('metric_prefix'))
         swift_options.append('statsd_default_sample_rate=%s' % \
                              statsd.get('default_sample_rate', '1.0'))
         swift_options.append('statsd_sample_rate_factor=%s' % \
