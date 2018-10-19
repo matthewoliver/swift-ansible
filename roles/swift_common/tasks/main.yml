@@ -50,10 +50,10 @@
   tags:
     - deploy_code
 
-- name: install swift's test dependencies
-  pip: requirements=/opt/swift/swift/test-requirements.txt
-  tags:
-    - deploy_code
+#- name: install swift's test dependencies
+#  pip: requirements=/opt/swift/swift/test-requirements.txt
+#  tags:
+#    - deploy_code
 
 - name: install swift
   command: python setup.py install chdir=/opt/swift/swift

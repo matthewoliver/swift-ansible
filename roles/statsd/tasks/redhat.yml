@@ -15,5 +15,5 @@
     gpgcheck: yes
 
 - name: "install Redhat/CentOS common statsd packages"
-  yum: pkg={{ item }} state=installed 
-  with_items: "{{ statsd_common_packages.redhat }}"
+  yum: pkg={{ statsd_common_packages.redhat }} state=installed disable_gpg_check=yes
+  

@@ -1,6 +1,7 @@
 [DEFAULT]
 bind_ip = {{ inventory_hostname }}
 bind_port = 8080
+# keep_idle = 600
 # bind_timeout = 30
 # backlog = 4096
 # swift_dir = /etc/swift
@@ -70,18 +71,40 @@ user = {{ user }}
 # log_statsd_sample_rate_factor = 1.0
 # log_statsd_metric_prefix =
 #
-# Use a comma separated list of full url (http://foo.bar:1234,https://foo.bar)
+# List of origin hosts that are allowed for CORS requests in addition to what
+# the container has set.
+# Use a comma separated list of full URL (http://foo.bar:1234,https://foo.bar)
 # cors_allow_origin =
+
+# If True (default) then CORS requests are only allowed if their Origin header
+# matches an allowed origin. Otherwise, any Origin is allowed.
 # strict_cors_mode = True
+#
+# Comma separated list of headers to expose through Access-Control-Expose-Headers,
+# in addition to the defaults and any headers set in container metadata (see
+# CORS documentation).
+# cors_expose_headers =
 #
 # client_timeout = 60
 # eventlet_debug = false
+#
+# You can set scheduling priority of processes. Niceness values range from -20
+# (most favorable to the process) to 19 (least favorable to the process).
+# nice_priority =
+#
+# You can set I/O scheduling class and priority of processes. I/O niceness
+# class values are IOPRIO_CLASS_RT (realtime), IOPRIO_CLASS_BE (best-effort) and
+# IOPRIO_CLASS_IDLE (idle). I/O niceness priority is a number which goes from
+# 0 to 7. The higher the value, the lower the I/O priority of the process.
+# Work only with ionice_class.
+# ionice_class =
+# ionice_priority =
 
 [pipeline:main]
 {% if authtoken_active == 'true' %}
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit authtoken keystoneauth copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync listing_formats bulk tempurl ratelimit authtoken keystoneauth copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {% else %}
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth copy container-quotas account-quotas slo dlo proxy-logging versioned_writes proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync listing_formats bulk tempurl ratelimit tempauth copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {% endif %}
 [app:proxy-server]
 use = egg:swift#proxy
@@ -91,6 +114,15 @@ log_facility = LOG_LOCAL0
 # set log_facility = LOG_LOCAL0
 # set log_level = INFO
 # set log_address = /dev/log
+#
+# When deployed behind a proxy, load balancer, or SSL terminator that is
+# configured to speak the human-readable (v1) PROXY protocol (see
+# http://www.haproxy.org/download/1.7/doc/proxy-protocol.txt), you should set
+# this option to true.  The proxy-server will populate the client connection
+# information using the PROXY protocol and reject any connection missing a
+# valid PROXY line with a 400.  Only v1 (human-readable) of the PROXY protocol
+# is supported.
+# require_proxy_protocol = false
 #
 # log_handoffs = true
 # recheck_account_existence = 60
@@ -106,7 +138,7 @@ node_timeout = 60
 # Timeouts from these requests can be recovered from so setting this to
 # something lower than node_timeout would provide quicker error recovery
 # while allowing for a longer timeout for non-recoverable requests (PUTs).
-# Defaults to node_timeout, should be overriden if node_timeout is set to a
+# Defaults to node_timeout, should be overridden if node_timeout is set to a
 # high number to prevent client timeouts from firing before the proxy server
 # has a chance to retry.
 # recoverable_node_timeout = node_timeout
@@ -126,12 +158,6 @@ conn_timeout = 3.5
 # If set to 'true' any authorized user may create and delete accounts; if
 # 'false' no one, even authorized, can.
 # allow_account_management = false
-#
-# Set object_post_as_copy = false to turn on fast posts where only the metadata
-# changes are stored anew and the original data file is kept in place. This
-# makes for quicker posts; but since the container metadata isn't updated in
-# this mode, features like container sync won't be able to sync posts.
-# object_post_as_copy = true
 #
 # If set to 'true' authorized accounts that do not yet exist within the Swift
 # cluster will be automatically created.
@@ -156,60 +182,118 @@ account_autocreate = true
 # Depth of the proxy put queue.
 # put_queue_depth = 10
 #
-# Storage nodes can be chosen at random (shuffle), by using timing
-# measurements (timing), or by using an explicit match (affinity).
-# Using timing measurements may allow for lower overall latency, while
-# using affinity allows for finer control. In both the timing and
-# affinity cases, equally-sorting nodes are still randomly chosen to
+# During GET and HEAD requests, storage nodes can be chosen at random
+# (shuffle), by using timing measurements (timing), or by using an explicit
+# region/zone match (affinity). Using timing measurements may allow for lower
+# overall latency, while using affinity allows for finer control. In both the
+# timing and affinity cases, equally-sorting nodes are still randomly chosen to
 # spread load.
-# The valid values for sorting_method are "affinity", "shuffle", and "timing".
+# The valid values for sorting_method are "affinity", "shuffle", or "timing".
+# This option may be overridden in a per-policy configuration section.
 # sorting_method = shuffle
 #
 # If the "timing" sorting_method is used, the timings will only be valid for
 # the number of seconds configured by timing_expiry.
 # timing_expiry = 300
 #
-# The maximum time (seconds) that a large object connection is allowed to last.
-# max_large_object_get_time = 86400
+# By default on a GET/HEAD swift will connect to a storage node one at a time
+# in a single thread. There is smarts in the order they are hit however. If you
+# turn on concurrent_gets below, then replica count threads will be used.
+# With addition of the concurrency_timeout option this will allow swift to send
+# out GET/HEAD requests to the storage nodes concurrently and answer with the
+# first to respond. With an EC policy the parameter only affects HEAD requests.
+# concurrent_gets = off
+#
+# This parameter controls how long to wait before firing off the next
+# concurrent_get thread. A value of 0 would be fully concurrent, any other
+# number will stagger the firing of the threads. This number should be
+# between 0 and node_timeout. The default is what ever you set for the
+# conn_timeout parameter.
+# concurrency_timeout = 0.5
 #
 # Set to the number of nodes to contact for a normal request. You can use
 # '* replicas' at the end to have it use the number given times the number of
 # replicas for the ring being used for the request.
 # request_node_count = 2 * replicas
 #
-# Which backend servers to prefer on reads. Format is r<N> for region
-# N or r<N>z<M> for region N, zone M. The value after the equals is
-# the priority; lower numbers are higher priority.
+# Specifies which backend servers to prefer on reads. Format is a comma
+# separated list of affinity descriptors of the form <selection>=<priority>.
+# The <selection> may be r<N> for selecting nodes in region N or r<N>z<M> for
+# selecting nodes in region N, zone M. The <priority> value should be a whole
+# number that represents the priority to be given to the selection; lower
+# numbers are higher priority.
 #
 # Example: first read from region 1 zone 1, then region 1 zone 2, then
 # anything in region 2, then everything else:
 # read_affinity = r1z1=100, r1z2=200, r2=300
 # Default is empty, meaning no preference.
+# This option may be overridden in a per-policy configuration section.
 # read_affinity =
 #
-# Which backend servers to prefer on writes. Format is r<N> for region
-# N or r<N>z<M> for region N, zone M. If this is set, then when
-# handling an object PUT request, some number (see setting
-# write_affinity_node_count) of local backend servers will be tried
-# before any nonlocal ones.
+# Specifies which backend servers to prefer on object writes. Format is a comma
+# separated list of affinity descriptors of the form r<N> for region N or
+# r<N>z<M> for region N, zone M. If this is set, then when handling an object
+# PUT request, some number (see setting write_affinity_node_count) of local
+# backend servers will be tried before any nonlocal ones.
 #
 # Example: try to write to regions 1 and 2 before writing to any other
 # nodes:
 # write_affinity = r1, r2
 # Default is empty, meaning no preference.
+# This option may be overridden in a per-policy configuration section.
 # write_affinity =
 #
-# The number of local (as governed by the write_affinity setting)
-# nodes to attempt to contact first, before any non-local ones. You
-# can use '* replicas' at the end to have it use the number given
-# times the number of replicas for the ring being used for the
+# The number of local (as governed by the write_affinity setting) nodes to
+# attempt to contact first on writes, before any non-local ones. The value
+# should be an integer number, or use '* replicas' at the end to have it use
+# the number given times the number of replicas for the ring being used for the
 # request.
+# This option may be overridden in a per-policy configuration section.
 # write_affinity_node_count = 2 * replicas
+#
+# The number of local (as governed by the write_affinity setting) handoff nodes
+# to attempt to contact on deletion, in addition to primary nodes.
+#
+# Example: in geographically distributed deployment of 2 regions, If
+# replicas=3, sometimes there may be 1 primary node and 2 local handoff nodes
+# in one region holding the object after uploading but before object replicated
+# to the appropriate locations in other regions. In this case, include these
+# handoff nodes to send request when deleting object could help make correct
+# decision for the response. The default value 'auto' means Swift will
+# calculate the number automatically, the default value is
+# (replicas - len(local_primary_nodes)). This option may be overridden in a
+# per-policy configuration section.
+# write_affinity_handoff_delete_count = auto
 #
 # These are the headers whose values will only be shown to swift_owners. The
 # exact definition of a swift_owner is up to the auth system in use, but
 # usually indicates administrative responsibilities.
-# swift_owner_headers = x-container-read, x-container-write, x-container-sync-key, x-container-sync-to, x-account-meta-temp-url-key, x-account-meta-temp-url-key-2, x-container-meta-temp-url-key, x-container-meta-temp-url-key-2,  x-account-access-control
+# swift_owner_headers = x-container-read, x-container-write, x-container-sync-key, x-container-sync-to, x-account-meta-temp-url-key, x-account-meta-temp-url-key-2, x-container-meta-temp-url-key, x-container-meta-temp-url-key-2, x-account-access-control
+#
+# You can set scheduling priority of processes. Niceness values range from -20
+# (most favorable to the process) to 19 (least favorable to the process).
+# nice_priority =
+#
+# You can set I/O scheduling class and priority of processes. I/O niceness
+# class values are IOPRIO_CLASS_RT (realtime), IOPRIO_CLASS_BE (best-effort) and
+# IOPRIO_CLASS_IDLE (idle). I/O niceness priority is a number which goes from
+# 0 to 7. The higher the value, the lower the I/O priority of the process.
+# Work only with ionice_class.
+# ionice_class =
+# ionice_priority =
+
+# Some proxy-server configuration options may be overridden on a per-policy
+# basis by including per-policy config section(s). The value of any option
+# specified a per-policy section will override any value given in the
+# proxy-server section for that policy only. Otherwise the value of these
+# options will be that specified in the proxy-server section.
+# The section name should refer to the policy index, not the policy name.
+# [proxy-server:policy:<policy index>]
+# sorting_method =
+# read_affinity =
+# write_affinity =
+# write_affinity_node_count =
+# write_affinity_handoff_delete_count =
 
 [filter:tempauth]
 #
@@ -251,7 +335,7 @@ account_autocreate = true
 # you can set this to false.
 # allow_overrides = true
 #
-# This specifies what scheme to return with storage urls:
+# This specifies what scheme to return with storage URLs:
 # http, https, or default (chooses based on what the server is running as)
 # This can be useful with an SSL load balancer in front of a non-SSL server.
 # storage_url_scheme = default
@@ -275,8 +359,10 @@ account_autocreate = true
 use = egg:swift#tempauth
 user_admin_admin = admin .admin .reseller_admin
 user_test_tester = testing .admin
-user_test2_tester2 = testing2 .admin
+user_test_tester2 = testing2 .admin
 user_test_tester3 = testing3
+user_test2_tester2 = testing2 .admin
+user_test5_tester5 = testing5 service
 {% endif %}
 
 # To enable Keystone authentication you need to have the auth token
@@ -284,9 +370,35 @@ user_test_tester3 = testing3
 # refer to the keystone's documentation for details about the
 # different settings.
 #
-# You'll need to have as well the keystoneauth middleware enabled
-# and have it in your main pipeline so instead of having tempauth in
-# there you can change it to: authtoken keystoneauth
+# You'll also need to have the keystoneauth middleware enabled and have it in
+# your main pipeline, as show in the sample pipeline at the top of this file.
+#
+# Following parameters are known to work with keystonemiddleware v2.3.0
+# (above v2.0.0), but checking the latest information in the wiki page[1]
+# is recommended.
+# 1. https://docs.openstack.org/keystonemiddleware/latest/middlewarearchitecture.html#configuration
+#
+# [filter:authtoken]
+# paste.filter_factory = keystonemiddleware.auth_token:filter_factory
+# www_authenticate_uri = http://keystonehost:5000
+# auth_url = http://keystonehost:35357
+# auth_plugin = password
+# The following credentials must match the Keystone credentials for the Swift
+# service and may need to be changed to match your Keystone configuration. The
+# example values shown here assume a user named 'swift' with admin role on a
+# project named 'service', both being in the Keystone domain with id 'default'.
+# Refer to the keystonemiddleware documentation link above [1] for other
+# examples.
+# project_domain_id = default
+# user_domain_id = default
+# project_name = service
+# username = swift
+# password = password
+#
+# delay_auth_decision defaults to False, but leaving it as false will
+# prevent other auth systems, staticweb, tempurl, formpost, and ACLs from
+# working. This value must be explicitly set to True.
+# delay_auth_decision = False
 #
 {% if authtoken_active == 'true' %}
 [filter:authtoken]
@@ -337,12 +449,6 @@ reseller_admin_role = reseller_admin
 # you can set this to false.
 # allow_overrides = true
 #
-# If is_admin is true, a user whose username is the same as the project name
-# and who has any role on the project will have access rights elevated to be
-# the same as if the user had an operator role. Note that the condition
-# compares names rather than UUIDs. This option is deprecated.
-# is_admin = false
-#
 # If the service_roles parameter is present, an X-Service-Token must be
 # present in the request that when validated, grants at least one role listed
 # in the parameter. The X-Service-Token may be scoped to any project.
@@ -366,6 +472,146 @@ reseller_admin_role = reseller_admin
 # move between domains, you should disable backwards compatible name matching
 # in ACLs by setting allow_names_in_acls to false:
 # allow_names_in_acls = true
+
+[filter:s3api]
+use = egg:swift#s3api
+
+# s3api setup:
+#
+# With either tempauth or your custom auth:
+# - Put s3api just before your auth filter(s) in the pipeline
+# With keystone:
+# - Put s3api and s3token before keystoneauth in the pipeline
+#
+# Swift has no concept of the S3's resource owner; the resources
+# (i.e. containers and objects) created via the Swift API have no owner
+# information. This option specifies how the s3api middleware handles them
+# with the S3 API.  If this option is 'false', such kinds of resources will be
+# invisible and no users can access them with the S3 API.  If set to 'true',
+# a resource without an owner belongs to everyone and everyone can access it
+# with the S3 API.  If you care about S3 compatibility, set 'false' here.  This
+# option makes sense only when the s3_acl option is set to 'true' and your
+# Swift cluster has the resources created via the Swift API.
+# allow_no_owner = false
+#
+# Set a region name of your Swift cluster.  Note that the s3api doesn't choose
+# a region of the newly created bucket.  This value is used for the
+# GET Bucket location API and v4 signatures calculation.
+# location = US
+#
+# Set whether to enforce DNS-compliant bucket names. Note that S3 enforces
+# these conventions in all regions except the US Standard region.
+# dns_compliant_bucket_names = True
+#
+# Set the default maximum number of objects returned in the GET Bucket
+# response.
+# max_bucket_listing = 1000
+#
+# Set the maximum number of parts returned in the List Parts operation.
+# (default: 1000 as well as S3 specification)
+# If setting it larger than 10000 (swift container_listing_limit default)
+# make sure you also increase the container_listing_limit in swift.conf.
+# max_parts_listing = 1000
+#
+# Set the maximum number of objects we can delete with the Multi-Object Delete
+# operation.
+# max_multi_delete_objects = 1000
+#
+# If set to 'true', s3api uses its own metadata for ACLs
+# (e.g. X-Container-Sysmeta-S3Api-Acl) to achieve the best S3 compatibility.
+# If set to 'false', s3api tries to use Swift ACLs (e.g. X-Container-Read)
+# instead of S3 ACLs as far as possible.
+# There are some caveats that one should know about this setting. Firstly,
+# if set to 'false' after being previously set to 'true' any new objects or
+# containers stored while 'true' setting will be accessible to all users
+# because the s3 ACLs will be ignored under s3_acl=False setting. Secondly,
+# s3_acl True mode don't keep ACL consistency between both the S3 and Swift
+# API. Meaning with s3_acl enabled S3 ACLs only effect objects and buckets
+# via the S3 API. As this ACL information wont be available via the Swift API
+# and so the ACL wont be applied.
+# Note that s3_acl currently supports only keystone and tempauth.
+# DON'T USE THIS for production before enough testing for your use cases.
+# This stuff is still under development and it might cause something
+# you don't expect.
+# s3_acl = false
+#
+# Specify a host name of your Swift cluster.  This enables virtual-hosted style
+# requests.
+# storage_domain =
+#
+# Enable pipeline order check for SLO, s3token, authtoken, keystoneauth
+# according to standard s3api/Swift construction using either tempauth or
+# keystoneauth. If the order is incorrect, it raises an exception to stop
+# proxy. Turn auth_pipeline_check off only when you want to bypass these
+# authenticate middlewares in order to use other 3rd party (or your
+# proprietary) authenticate middleware.
+# auth_pipeline_check = True
+#
+# Enable multi-part uploads. (default: true)
+# This is required to store files larger than Swift's max_file_size (by
+# default, 5GiB). Note that has performance implications when deleting objects,
+# as we now have to check for whether there are also segments to delete.
+# allow_multipart_uploads = True
+#
+# Set the maximum number of parts for Upload Part operation.(default: 1000)
+# When setting it to be larger than the default value in order to match the
+# specification of S3, set to be larger max_manifest_segments for slo
+# middleware.(specification of S3: 10000)
+# max_upload_part_num = 1000
+#
+# Enable returning only buckets which owner are the user who requested
+# GET Service operation. (default: false)
+# If you want to enable the above feature, set this and s3_acl to true.
+# That might cause significant performance degradation. So, only if your
+# service absolutely need this feature, set this setting to true.
+# If you set this to false, s3api returns all buckets.
+# check_bucket_owner = false
+#
+# By default, Swift reports only S3 style access log.
+# (e.g. PUT /bucket/object) If set force_swift_request_proxy_log
+# to be 'true', Swift will become to output Swift style log
+# (e.g. PUT /v1/account/container/object) in addition to S3 style log.
+# Note that they will be reported twice (i.e. s3api doesn't care about
+# the duplication) and Swift style log will includes also various subrequests
+# to achieve S3 compatibilities when force_swift_request_proxy_log is set to
+# 'true'
+# force_swift_request_proxy_log = false
+#
+# AWS S3 document says that each part must be at least 5 MB in a multipart
+# upload, except the last part.
+# min_segment_size = 5242880
+
+# You can override the default log routing for this filter here:
+# log_name = s3api
+
+[filter:s3token]
+# s3token middleware authenticates with keystone using the s3 credentials
+# provided in the request header. Please put s3token between s3api
+# and keystoneauth if you're using keystoneauth.
+use = egg:swift#s3token
+
+# Prefix that will be prepended to the tenant to form the account
+reseller_prefix = AUTH_
+
+# By default, s3token will reject all invalid S3-style requests. Set this to
+# True to delegate that decision to downstream WSGI components. This may be
+# useful if there are multiple auth systems in the proxy pipeline.
+delay_auth_decision = False
+
+# Keystone server details
+auth_uri = http://keystonehost:35357/v3
+
+# Connect/read timeout to use when communicating with Keystone
+http_timeout = 10.0
+
+# SSL-related options
+# insecure = False
+# certfile =
+# keyfile =
+
+# You can override the default log routing for this filter here:
+# log_name = s3token
+
 [filter:healthcheck]
 use = egg:swift#healthcheck
 # An optional filesystem path, which if present, will cause the healthcheck
@@ -387,7 +633,8 @@ use = egg:swift#memcache
 # If not set here, the value for memcache_servers will be read from
 # memcache.conf (see memcache.conf-sample) or lacking that file, it will
 # default to the value below. You can specify multiple servers separated with
-# commas, as in: 10.1.2.3:11211,10.1.2.4:11211
+# commas, as in: 10.1.2.3:11211,10.1.2.4:11211 (IPv6 addresses must
+# follow rfc3986 section-3.2.2, i.e. [::1]:11211)
 # memcache_servers = 127.0.0.1:11211
 #
 # Sets how memcache values are serialized and deserialized:
@@ -454,6 +701,14 @@ use = egg:swift#ratelimit
 # container_listing_ratelimit_10 = 50
 # container_listing_ratelimit_50 = 20
 
+[filter:read_only]
+use = egg:swift#read_only
+# read_only set to true means turn global read only on
+# read_only = false
+# allow_deletes set to true means to allow deletes
+# allow_deletes = false
+# Note: Put after ratelimit in the pipeline.
+
 [filter:domain_remap]
 use = egg:swift#domain_remap
 # You can override the default log routing for this filter here:
@@ -463,9 +718,31 @@ use = egg:swift#domain_remap
 # set log_headers = false
 # set log_address = /dev/log
 #
+# Specify the storage_domain that match your cloud, multiple domains
+# can be specified separated by a comma
 # storage_domain = example.com
+
+# Specify a root path part that will be added to the start of paths if not
+# already present.
 # path_root = v1
+
+# Browsers can convert a host header to lowercase, so check that reseller
+# prefix on the account is the correct case. This is done by comparing the
+# items in the reseller_prefixes config option to the found prefix. If they
+# match except for case, the item from reseller_prefixes will be used
+# instead of the found reseller prefix. When none match, the default reseller
+# prefix is used. When no default reseller prefix is configured, any request
+# with an account prefix not in that list will be ignored by this middleware.
 # reseller_prefixes = AUTH
+# default_reseller_prefix =
+
+# Enable legacy remapping behavior for versioned path requests:
+#   c.a.example.com/v1/o -> /v1/AUTH_a/c/o
+# instead of
+#   c.a.example.com/v1/o -> /v1/AUTH_a/c/v1/o
+# ... by default all path parts after a remapped domain are considered part of
+# the object name with no special case for the path "v1"
+# mangle_client_paths = False
 
 [filter:catch_errors]
 use = egg:swift#catch_errors
@@ -491,10 +768,34 @@ use = egg:swift#cname_lookup
 # storage_domain = example.com
 #
 # lookup_depth = 1
+#
+# Specify the nameservers to use to do the CNAME resolution. If unset, the
+# system configuration is used. Multiple nameservers can be specified
+# separated by a comma. Default port 53 can be overridden. IPv6 is accepted.
+# Example: 127.0.0.1, 127.0.0.2, 127.0.0.3:5353, [::1], [::1]:5353
+# nameservers =
 
 # Note: Put staticweb just after your auth filter(s) in the pipeline
 [filter:staticweb]
 use = egg:swift#staticweb
+# You can override the default log routing for this filter here:
+# set log_name = staticweb
+# set log_facility = LOG_LOCAL0
+# set log_level = INFO
+# set log_headers = false
+# set log_address = /dev/log
+#
+# At times when it's impossible for staticweb to guess the outside
+# endpoint correctly, the url_base may be used to supply the URL
+# scheme and/or the host name (and port number) in order to generate
+# redirects.
+# Example values:
+#    http://www.example.com    - redirect to www.example.com
+#    https:                    - changes the schema only
+#    https://                  - same, changes the schema only
+#    //www.example.com:8080    - redirect www.example.com on port 8080
+#                                (schema unchanged)
+# url_base =
 
 # Note: Put tempurl before dlo, slo and your auth filter(s) in the pipeline
 [filter:tempurl]
@@ -523,6 +824,10 @@ use = egg:swift#tempurl
 # whitespace delimited list of header names and names can optionally end with
 # '*' to indicate a prefix match.
 # outgoing_allow_headers = x-object-meta-public-*
+#
+# The digest algorithm(s) supported for generating signatures;
+# whitespace-delimited.
+# allowed_digests = sha1 sha256 sha512
 
 # Note: Put formpost just before your auth filter(s) in the pipeline
 [filter:formpost]
@@ -552,7 +857,7 @@ use = egg:swift#proxy_logging
 # access_log_udp_port = 514
 #
 # You can use log_statsd_* from [DEFAULT] or override them here:
-# access_log_statsd_host = localhost
+# access_log_statsd_host =
 # access_log_statsd_port = 8125
 # access_log_statsd_default_sample_rate = 1.0
 # access_log_statsd_sample_rate_factor = 1.0
@@ -593,36 +898,61 @@ use = egg:swift#bulk
 # max_failed_extractions = 1000
 # max_deletes_per_request = 10000
 # max_failed_deletes = 1000
-
+#
 # In order to keep a connection active during a potentially long bulk request,
 # Swift may return whitespace prepended to the actual response body. This
 # whitespace will be yielded no more than every yield_frequency seconds.
 # yield_frequency = 10
-
+#
 # Note: The following parameter is used during a bulk delete of objects and
 # their container. This would frequently fail because it is very likely
 # that all replicated objects have not been deleted by the time the middleware got a
 # successful response. It can be configured the number of retries. And the
 # number of seconds to wait between each retry will be 1.5**retry
-
 # delete_container_retry_count = 0
+#
+# To speed up the bulk delete process, multiple deletes may be executed in
+# parallel. Avoid setting this too high, as it gives clients a force multiplier
+# which may be used in DoS attacks. The suggested range is between 2 and 10.
+# delete_concurrency = 2
 
 # Note: Put after auth and staticweb in the pipeline.
 [filter:slo]
 use = egg:swift#slo
 # max_manifest_segments = 1000
-# max_manifest_size = 2097152
-# min_segment_size = 1048576
-# Start rate-limiting SLO segment serving after the Nth segment of a
+# max_manifest_size = 8388608
+#
+# Rate limiting applies only to segments smaller than this size (bytes).
+# rate_limit_under_size = 1048576
+#
+# Start rate-limiting SLO segment serving after the Nth small segment of a
 # segmented object.
 # rate_limit_after_segment = 10
 #
 # Once segment rate-limiting kicks in for an object, limit segments served
 # to N per second. 0 means no rate-limiting.
-# rate_limit_segments_per_sec = 0
+# rate_limit_segments_per_sec = 1
 #
 # Time limit on GET requests (seconds)
 # max_get_time = 86400
+#
+# When creating an SLO, multiple segment validations may be executed in
+# parallel. Further, multiple deletes may be executed in parallel when deleting
+# with ?multipart-manifest=delete. Use this setting to limit how many
+# subrequests may be executed concurrently. Avoid setting it too high, as it
+# gives clients a force multiplier which may be used in DoS attacks. The
+# suggested range is between 2 and 10.
+# concurrency = 2
+#
+# This may be used to separately tune validation and delete concurrency values.
+# Default is to use the concurrency value from above; all of the same caveats
+# apply regarding recommended ranges.
+# delete_concurrency = 2
+#
+# In order to keep a connection active during a potentially long PUT request,
+# clients may request that Swift send whitespace ahead of the final response
+# body. This whitespace will be yielded at most every yield_frequency seconds.
+# yield_frequency = 10
 
 # Note: Put after auth and staticweb in the pipeline.
 # If you don't put it in the pipeline, it will be inserted for you.
@@ -649,6 +979,12 @@ use = egg:swift#account_quotas
 
 [filter:gatekeeper]
 use = egg:swift#gatekeeper
+# Set this to false if you want to allow clients to set arbitrary X-Timestamps
+# on uploaded objects. This may be used to preserve timestamps when migrating
+# from a previous storage system, but risks allowing users to upload
+# difficult-to-delete data.
+# shunt_inbound_x_timestamp = true
+#
 # You can override the default log routing for this filter here:
 # set log_name = gatekeeper
 # set log_facility = LOG_LOCAL0
@@ -658,8 +994,8 @@ use = egg:swift#gatekeeper
 
 [filter:container_sync]
 use = egg:swift#container_sync
-# Set this to false if you want to disallow any full url values to be set for
-# any new X-Container-Sync-To headers. This will keep any new full urls from
+# Set this to false if you want to disallow any full URL values to be set for
+# any new X-Container-Sync-To headers. This will keep any new full URLs from
 # coming in, but won't change any existing values already in the cluster.
 # Updating those will have to be done manually, as knowing what the true realm
 # endpoint should be cannot always be guessed.
@@ -699,6 +1035,7 @@ use = egg:swift#xprofile
 #
 # unwind the iterator of applications
 # unwind = false
+
 # Note: Put after slo, dlo in the pipeline.
 # If you don't put it in the pipeline, it will be inserted automatically.
 [filter:versioned_writes]
@@ -714,9 +1051,104 @@ use = egg:swift#versioned_writes
 # If you don't put it in the pipeline, it will be inserted for you.
 [filter:copy]
 use = egg:swift#copy
-# Set object_post_as_copy = false to turn on fast posts where only the metadata
-# changes are stored anew and the original data file is kept in place. This
-# makes for quicker posts.
-# When object_post_as_copy is set to True, a POST request will be transformed
-# into a COPY request where source and destination objects are the same.
-# object_post_as_copy = true
+
+# Note: To enable encryption, add the following 2 dependent pieces of crypto
+# middleware to the proxy-server pipeline. They should be to the right of all
+# other middleware apart from the final proxy-logging middleware, and in the
+# order shown in this example:
+# <other middleware> keymaster encryption proxy-logging proxy-server
+[filter:keymaster]
+use = egg:swift#keymaster
+
+# Sets the root secret from which encryption keys are derived. This must be set
+# before first use to a value that is a base64 encoding of at least 32 bytes.
+# The security of all encrypted data critically depends on this key, therefore
+# it should be set to a high-entropy value. For example, a suitable value may
+# be obtained by base-64 encoding a 32 byte (or longer) value generated by a
+# cryptographically secure random number generator. Changing the root secret is
+# likely to result in data loss.
+encryption_root_secret = changeme
+
+# Multiple root secrets may be configured using options named
+# 'encryption_root_secret_<secret_id>' where 'secret_id' is a unique
+# identifier. This enables the root secret to be changed from time to time.
+# Only one root secret is used for object PUTs or POSTs at any moment in time.
+# This is specified by the 'active_root_secret_id' option. If
+# 'active_root_secret_id' is not specified then the root secret specified by
+# 'encryption_root_secret' is considered to be the default. Once a root secret
+# has been used as the default root secret it must remain in the config file in
+# order that any objects that were encrypted with it may be subsequently
+# decrypted. The secret_id used to identify the key cannot change.
+# encryption_root_secret_myid = changeme
+# active_root_secret_id = myid
+
+# Sets the path from which the keymaster config options should be read. This
+# allows multiple processes which need to be encryption-aware (for example,
+# proxy-server and container-sync) to share the same config file, ensuring
+# that the encryption keys used are the same. The format expected is similar
+# to other config files, with a single [keymaster] section and a single
+# encryption_root_secret option. If this option is set, the root secret
+# MUST NOT be set in proxy-server.conf.
+# keymaster_config_path =
+
+# To store the encryption root secret in a remote key management system (KMS)
+# such as Barbican, replace the keymaster middleware with the kms_keymaster
+# middleware in the proxy-server pipeline. They should be to the right of all
+# other middleware apart from the final proxy-logging middleware, and in the
+# order shown in this example:
+# <other middleware> kms_keymaster encryption proxy-logging proxy-server
+[filter:kms_keymaster]
+use = egg:swift#kms_keymaster
+
+# Sets the path from which the keymaster config options should be read. This
+# allows multiple processes which need to be encryption-aware (for example,
+# proxy-server and container-sync) to share the same config file, ensuring
+# that the encryption keys used are the same. The format expected is similar
+# to other config files, with a single [kms_keymaster] section. See the
+# keymaster.conf-sample file for details on the kms_keymaster configuration
+# options.
+# keymaster_config_path =
+
+# kmip_keymaster middleware may be used to fetch an encryption root secret from
+# a KMIP service. It should replace, in the same position, any other keymaster
+# middleware in the proxy-server pipeline, so that the middleware order is as
+# shown in this example:
+# <other middleware> kmip_keymaster encryption proxy-logging proxy-server
+[filter:kmip_keymaster]
+use = egg:swift#kmip_keymaster
+
+# Sets the path from which the keymaster config options should be read. This
+# allows multiple processes which need to be encryption-aware (for example,
+# proxy-server and container-sync) to share the same config file, ensuring
+# that the encryption keys used are the same. As an added benefit the
+# keymaster configuration file can have different permissions than the
+# `proxy-server.conf` file. The format expected is similar
+# to other config files, with a single [kmip_keymaster] section. See the
+# keymaster.conf-sample file for details on the kmip_keymaster configuration
+# options.
+# keymaster_config_path =
+
+[filter:encryption]
+use = egg:swift#encryption
+
+# By default all PUT or POST'ed object data and/or metadata will be encrypted.
+# Encryption of new data and/or metadata may be disabled by setting
+# disable_encryption to True. However, all encryption middleware should remain
+# in the pipeline in order for existing encrypted data to be read.
+# disable_encryption = False
+
+# listing_formats should be just right of the first proxy-logging middleware,
+# and left of most other middlewares. If it is not already present, it will
+# be automatically inserted for you.
+[filter:listing_formats]
+use = egg:swift#listing_formats
+
+# Note: Put after slo, dlo, versioned_writes, but before encryption in the
+# pipeline.
+[filter:symlink]
+use = egg:swift#symlink
+# Symlinks can point to other symlinks provided the number of symlinks in a
+# chain does not exceed the symloop_max value. If the number of chained
+# symlinks exceeds the limit symloop_max a 409 (HTTPConflict) error
+# response will be produced.
+# symloop_max = 2
